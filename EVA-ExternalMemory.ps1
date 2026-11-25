@@ -32,7 +32,7 @@ function Get-EvaMemory {
 }
 
 function New-EvaActivationPrompt {
-  return 'EVA: Probudi se. Ucitaj EVA_CONTEXT.md s GitHuba i nastavi oba projekta prema protokolu.'
+  return 'EVA: Otvori novi razgovor. Ucitaj aktualni EVA_CONTEXT.md s GitHuba (ne arhivu), zatim prema protokolu nastavi oba projekta: kontinuitet/automatizacija i kripto PAPER istrazivanje. Provjeri cinjenice, napravi jedan koristan korak i azuriraj memoriju.'
 }
 
 switch ($Action) {
@@ -43,27 +43,24 @@ switch ($Action) {
     [System.IO.File]::WriteAllText($PromptFile, $prompt, [System.Text.UTF8Encoding]::new($false))
     Set-Clipboard -Value $prompt
     $length = (Get-Item -LiteralPath $PromptFile).Length
-    if ($prompt -match 'POCETAK VANJSKE EVA MEMORIJE' -or $length -gt 5000) {
+    if ($prompt.Length -gt 600 -or $length -gt 2000) {
       throw 'Activation prompt validation failed: prompt is not short.'
     }
     Write-Host 'EVA_SHORT_WAKE_PROMPT_READY'
     Write-Host "Prompt file: $PromptFile"
     Write-Host "Prompt characters: $($prompt.Length)"
-    Write-Host 'Full external memory is NOT embedded in the UI prompt.'
-    Write-Host 'ChatGPT must retrieve EVA_CONTEXT.md after activation through the connected GitHub integration.'
+    Write-Host 'Only the short trigger is sent; no memory text is embedded.'
   }
   'Status' {
     Write-Host "Repo: https://github.com/$Repo"
     Write-Host "Raw memory: $RawUrl"
     Write-Host "Local cache: $CacheFile"
-    Write-Host "Cache exists: $(Test-Path $CacheFile)"
     Write-Host "Prompt exists: $(Test-Path $PromptFile)"
     if (Test-Path $PromptFile) {
       $promptText = [System.IO.File]::ReadAllText($PromptFile, [System.Text.Encoding]::UTF8)
       Write-Host "Prompt characters: $($promptText.Length)"
-      Write-Host "Full memory embedded: $($promptText -match 'POCETAK VANJSKE EVA MEMORIJE')"
     }
-    Write-Host 'Assistant-side GitHub integration performs the actual memory read and verified write-back.'
+    Write-Host 'The scheduled launcher opens a NEW ChatGPT conversation; it does not use the legacy conversation URL.'
   }
   'Save' {
     if ([string]::IsNullOrWhiteSpace($Entry)) { throw 'For manual Save, provide -Entry with a short verified note.' }
