@@ -185,3 +185,19 @@ At each fresh activation:
 - No new CSV result artifact or fresh performance evidence was obtained in this activation. Positive net expectancy remains unproven; no live trading or real-money execution.
 - BLOCKER: no new accessible result dataset was established for a fresh quantitative test in this activation.
 - NEXT STEP: after the context-transfer update, fix the phase-boundary state reset and test with chronological validation/holdout and walk-forward once source data/results are available.
+
+## Dated update — 2026-11-25 18:xx Europe/Zagreb, short activation confirmation and recovery of v1.0 results
+### A) EVA functional continuity / automation
+- Re-fetched the current helper and wrapper from GitHub `main`. Helper blob SHA: `719fd882fc8f846c68a122dd5d785d835b466465`. Confirmed `New-EvaActivationPrompt` returns only the compact wake instruction; `Prepare` writes that string to `EVA-Activation-Prompt.txt`, copies it to clipboard, and does not call `Get-EvaMemory` or embed the full `EVA_CONTEXT.md`. The wrapper runs helper `Prepare` and then the existing `Start-Eva.ps1`.
+- User reports the supplied local PowerShell refresh block was pasted/executed without errors. This is user-reported successful execution; the actual local prompt file contents and a new end-to-end scheduled activation have not been independently read/verified in this activation.
+- No Task Scheduler triggers, schedule, Chrome target, or launcher were changed.
+- **POTVRĐENO:** GitHub source now implements short-trigger-only architecture; wrapper preserves the existing launcher. **NIJE POTVRĐENO:** exact local prompt contents / next activation's assistant-side GitHub retrieval and verified write-back.
+- **SLJEDEĆI KORAK:** At the next activation, verify the fresh assistant-side read of this context and commit/read-back. Do not ask the user to rerun setup or alter schedule/target.
+
+### B) Crypto strategy research — PAPER only
+- **NAPRAVLJENO:** Found and read the previously overlooked Library artifact `eva_tick_research_results.csv` (2,037 bytes, 11 lines). It is the v1.0 output, not the v1.1 CSV. It covers 7 loaded UTC days, split date 2026-11-21, 9,146,928 BTCUSDT ticks and 1,482,155 SOLUSDT ticks.
+- Holdout returns from this historical CSV: BTC targets 0.20/0.30/0.50/0.75/1.00% = -1.2148/-0.5895/-0.0688/+0.2178/+0.3317%; SOL = -1.8139/-1.0194/-0.2541/+0.1397/+0.3249%.
+- Corresponding closed holdout trade counts: BTC 41/28/17/11/9; SOL 56/39/24/16/12. For targets >=0.30%, closed-trade win rate is 100% in this short sample, but **every row also ends with an open position**. The win-rate metric excludes that open position; portfolio return marks it at estimated liquidation value. Thus the 100% closed-trade win rate is not a complete measure of downside or strategy quality.
+- **POTVRĐENO:** This single 7-day historical screen contains small positive marked holdout returns only at 0.75% and 1.00% targets for both symbols; all train returns are negative. This is preliminary evidence, not proof of positive expectancy. The sample has only 9–16 closed trades at those positive settings, one 70/30 split, fixed assumed costs, trade-price aggTrades rather than bid/ask execution, and the known train/test boundary state leak (previous tick retained).
+- **NIJE POTVRĐENO:** Robust net edge, statistical reliability, performance across regimes, or live execution feasibility. The v1.1 result CSV remains absent from Library.
+- **SLJEDEĆI KORAK:** Preserve this v1.0 result as baseline; patch/reset phase-boundary state and add deterministic tests, then produce v1.1 results with chronological train/validation/untouched holdout and walk-forward, and more data. PAPER only; no live orders or real funds.
