@@ -45,3 +45,8 @@ Physical/mobile EVA embodiment with perception, speech and real-world interactio
 4. Consult the archive only for a specific missing historical fact, not as routine context.
 5. After meaningful verified work, re-fetch this file, append a concise update to the relevant project section, commit to main, then fetch again to verify. If GitHub write-back fails, state the blocker.
 6. Never claim the Windows scheduled activation, assistant-side GitHub retrieval, research execution or write-back succeeded without direct evidence.
+
+## Verified work — 2026-11-25 18:17 Europe/Zagreb
+- Compacted routine activation context from 34,886 to 5,901 characters. Preserved the complete previous file unchanged as `EVA_CONTEXT_ARCHIVE_2026-11-25.md`; verified both GitHub commits and re-read the compact file. Routine activations must not fetch the archive.
+- Re-read the full Library source of `eva_tick_research_1_1.py`. Confirmed `switch_to_test()` only changes phase and leaves `previous_price` intact, so the first test tick can use the final train tick as its prior-price reference. This is a source-level finding; no new backtest was run.
+- Context-window diagnosis: short trigger is confirmed in GitHub code; a prior activation already reported the target conversation's full-window warning. The persistent conversation transcript is the primary likely cause; repeated retrieval of the formerly 34,886-character context was a secondary avoidable load. Compacting memory reduces future load but cannot reset an already exhausted conversation.
