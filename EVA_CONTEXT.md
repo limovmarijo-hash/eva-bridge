@@ -82,3 +82,15 @@ At each fresh activation:
 - Added README_EXTERNAL_MEMORY.md with installation and GitHub CLI write-back instructions. All four new files were committed to GitHub.
 - Important: none of these new scripts has yet been run on the user's Windows PC. The wrapper assumes the existing launcher reads EVA-Activation-Prompt.txt, as indicated by the latest project handoff; this must be verified in the first on-device test. GitHub read/cache and append/write-back have not been runtime-tested on Windows.
 - Next step: run the one-time installer in an ordinary PowerShell window, then manually test the wrapper once and verify that the existing Chrome target receives the GitHub-backed prompt. Do not change the existing task schedule or create another task.
+
+## Dated update — 2026-11-25, full-cycle activation protocol implemented in repository
+- Re-read the actual PowerShell helper, wrapper, installer, README, and canonical context from GitHub before changing anything.
+- Reworked `EVA-ExternalMemory.ps1` so every prepared activation prompt explicitly requires work on BOTH active streams: (A) EVA functional continuity/automation and (B) crypto strategy research in PAPER mode only.
+- The prompt now directs ChatGPT to use the connected GitHub integration to re-fetch the latest `EVA_CONTEXT.md`, append an evidence-based entry for both work streams, commit it to `main`, and verify the saved result. If GitHub write access is unavailable, it must report a blocker and must not claim success.
+- Clarified that the PowerShell helper only fetches/prepares context; it cannot know what ChatGPT actually accomplished. Automatic write-back of the assistant's actual work must be performed by the assistant through the connected GitHub integration.
+- Rewrote `README_EXTERNAL_MEMORY.md` to document the complete intended cycle, the assistant-side write-back boundary, installation, smoke test, and the distinction between automatic write-back and optional manual GitHub CLI Save.
+- GitHub commits: helper update `94a7177c1974d0abfbe579172a128d335223f024`; README update `83dd7cad6f56d5b1055fdf70431f770c88c1dfde`.
+- The existing Windows launcher is reported in the latest troubleshooting state to read `EVA-Activation-Prompt.txt`, target the configured Chrome conversation, paste the prompt, and send Enter. This is conversation-reported, not independently inspected on the PC during this update.
+- NOT YET VERIFIED: the updated helper has not been run on Windows; the scheduled task has not yet been switched by running the installer; a real scheduled activation has not yet demonstrated both project work and successful GitHub write-back. The full cycle is now explicitly specified in the code/prompt, but final end-to-end acceptance depends on the user's one-time Windows installation and test.
+- Next step: user runs the installer once, then performs one manual smoke test. Verify the ChatGPT message actually submits, both work streams are handled, and the resulting GitHub memory commit can be read back.
+
