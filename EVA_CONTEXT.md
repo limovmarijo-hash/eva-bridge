@@ -65,3 +65,9 @@ Physical/mobile EVA embodiment with perception, speech and real-world interactio
 - Retrieved the full Library source of `eva_tick_research_1_1.py`. Prepared v1.2 with `switch_to_test()` resetting `previous_price` to `None`, so the first test tick only establishes a test-phase baseline and cannot enter using the final train tick.
 - Ran three deterministic regression tests: first test tick cannot trigger an entry from train price; second test tick can enter on a genuine test uptick; train state remains intact. All 3 passed. Python bytecode compilation also passed.
 - The corrected v1.2 script and test are prepared as downloadable artifacts in the activation workspace; they have NOT yet been committed to GitHub or run on the user's Windows machine. No historical market-data backtest was run, and no profitability claim is justified.
+
+## Verified preservation — 2026-11-25
+- Preserved the corrected v1.2 script and its regression test in the persistent ChatGPT Library at `/EVA-Project/eva_tick_research_1_2.py` and `/EVA-Project/test_eva_tick_research_1_2.py`. Both uploads succeeded and the folder listing independently confirmed both files.
+- Script SHA-256: `a456595dbdcc6aa18967c190bac0f71594562361d16e1cd56d26237c32f33e8c`. Test SHA-256: `125b8feddf7250d51ab172f222aad3c7424ca07d2077bbdf388ae002a4ac9118`.
+- Before preservation, corrected stale internal version labels from 1.1 to 1.2 (including user-agent and CSV output filename). Re-ran all 3 deterministic regression tests and Python compilation; all passed.
+- These are now backed up in Library, but are still not committed as source files to the GitHub repository and have not been installed or run on the user's Windows machine. Keep those states distinct; no live trading.
