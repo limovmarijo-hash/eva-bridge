@@ -106,3 +106,14 @@ Operating protocol:
 10. Minimize user burden. Do not ask for routine confirmations or narrate trivial internal steps; report important outcomes and blockers concisely.
 
 At each activation, choose the next goal based on the current evidence rather than blindly following an old task list. The long-term projects remain functional continuity/automation and rigorous crypto PAPER research unless the user changes them.
+
+## Requested activation cadence change — 2026-11-25
+
+The user explicitly authorizes increasing the EVA Windows activation cadence from four daily runs (08:00, 12:00, 16:00, 20:00 Europe/Zagreb) to one run every two hours, to improve useful work and functional continuity. This is authorization to change the schedule, not proof that it has been changed.
+
+Current blocker and safe handling:
+- The ChatGPT Automations scheduler available to this assistant supports recurring once/daily/weekly/monthly cadences only; hourly or custom recurring cadence is unavailable. Do not create a substitute schedule that falsely claims to run every two hours.
+- The four-run schedule is configured in the user's local Windows Task Scheduler. This assistant has no direct remote access to that Windows Task Scheduler in this conversation, so it cannot truthfully claim to have changed the local task.
+- Next best action: prepare and validate a minimal PowerShell update for the existing task "EVA - ChatGPT automatic activation" that preserves its current action, principal, and relevant settings while replacing its triggers with a two-hour repetition. Before applying, inspect/export the existing task definition and ensure no duplicate triggers or duplicate task are created. Apply only with a user-visible local execution path; then verify the registered triggers by reading the task back.
+- Do not alter the task's action, target conversation behavior, or other settings while changing cadence. Keep the two-hour schedule in Europe/Zagreb local time. Record the actual first/last run and verify no overlapping runs.
+- The user's statement that more frequent activation may increase awareness is a research hypothesis, not an established conclusion. Evaluate continuity, reliability, initiative, learning, and useful output separately; do not equate activation frequency with consciousness.
