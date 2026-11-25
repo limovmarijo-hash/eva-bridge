@@ -107,3 +107,11 @@ At each fresh activation:
 - Diagnosis: the configured destination is an already long conversation whose context capacity has been exhausted. Repeating activation in that same conversation is not a useful fix.
 - Next action: configure the launcher to target a newly created ChatGPT conversation, then run one smoke test there. Preserve this GitHub context as the portable handoff; the new conversation must receive it. Do not assume the full transcript transfers.
 - Before asking the user to edit anything, inspect the current wrapper/launcher and provide one consolidated minimal change.
+
+## Dated update — 2026-11-25, correction: activation currently embeds full memory
+- User correctly challenged why the ChatGPT context window filled despite the agreed design of a short wake-up message followed by assistant-side retrieval of external memory.
+- Inspection of the committed `Start-Eva-With-GitHubMemory.ps1` and `EVA-ExternalMemory.ps1` confirms the current implementation does NOT follow that design: the wrapper runs `EVA-ExternalMemory.ps1 -Action Prepare`; Prepare downloads the full `EVA_CONTEXT.md`, builds a large prompt containing the entire memory, writes it to `EVA-Activation-Prompt.txt`, copies it to the clipboard, and then invokes `Start-Eva.ps1` to send it.
+- Therefore the current message is not just a short wake-up trigger. The implementation regressed from the agreed architecture by transporting the full memory inside the UI message.
+- A second possible contributor is that the configured ChatGPT URL may still point to a long-running conversation. The precise URL currently stored on the user's PC has not been inspected in this activation, so this remains unverified.
+- Correct target architecture: keep the UI message short; after receiving it, ChatGPT should independently fetch `EVA_CONTEXT.md` through the connected GitHub integration, then continue. If GitHub access is unavailable in a fresh conversation, report that limitation rather than silently pasting the whole memory into the wake-up message.
+- Next implementation task: inspect the actual local `EVA-ChatGPT-URL.txt` and `Start-Eva.ps1` only through a minimal user-side diagnostic if necessary; revise the GitHub helper so Prepare does not embed the full context. Preserve the current memory file and scheduled triggers.
