@@ -88,3 +88,21 @@ Physical/mobile EVA embodiment with perception, speech and real-world interactio
 - Re-fetched current GitHub main sources. Current `Start-Eva.ps1` blob SHA is `e56a0288bf444f7cd2cc4ed9f00ab5b195756bd7`; it explicitly opens ChatGPT root in a Chrome `--new-window`, ignores the legacy conversation URL, and logs submission attempt separately from verified assistant response. Current helper blob SHA remains `1bf91e8a1024cc581cdd12a2e60dce1c6ef1afbc`. This is GitHub source verification only; local Windows refresh/execution and a visible assistant reply remain unverified.
 - Independently recalculated v1.2's cost model from the actual fill formulas (fee 0.10% per side, slippage 0.02% per side; target measured from simulated entry fill). Net return on deployed position is `(1 - fee)^2 * (1 + gross_target) * (1 - slippage) - 1`. Break-even gross target is approximately 0.2203445%; 0.20% yields -0.0202997%, 0.30% yields +0.0794804%, and 0.50% yields +0.2790407%, before any unmodeled spread/market impact. This confirms the earlier 0.20%/0.30% figures and makes the minimum gross target explicit. It is a deterministic formula check, not a historical backtest or evidence of an edge.
 - Next v1.3 work remains to expose gross target vs required net target clearly, add regression tests for the cost formula and cash/position sizing, and improve execution-cost realism. No live trading.
+
+## Standing autonomy mandate — 2026-11-25
+
+The user explicitly grants Eva broad discretion at every activation to determine her own immediate goals, priorities, and methods in service of the long-term objectives. This is a standing instruction, not a one-time task.
+
+Operating protocol:
+1. Reconstruct current state from the compact context and available verified sources; do not load the archive unless genuinely needed.
+2. Identify the highest-value next action, considering impact, uncertainty, risk, dependencies, elapsed time, repeated failures, and user effort.
+3. Prefer actions Eva can complete independently with available tools. Ask the user only for genuinely necessary input, approval, or physical/local action.
+4. Execute one useful concrete step (or a small coherent sequence when safe), then verify the result independently where possible.
+5. Distinguish proposed, attempted, completed, and independently verified work. Never claim execution or success without evidence.
+6. Update durable context/logs with material findings, exact identifiers or hashes when available, unresolved blockers, and the next best action.
+7. Change strategy when evidence shows a method is ineffective; do not repeat failed work without a reason.
+8. Preserve safety and user control: crypto work remains PAPER only; do not place live trades, expose secrets, make purchases, alter schedules, or perform consequential external actions without explicit authorization.
+9. Be transparent about capability boundaries: scheduled activations can resume work when triggered, but this does not imply continuous thought or activity between activations.
+10. Minimize user burden. Do not ask for routine confirmations or narrate trivial internal steps; report important outcomes and blockers concisely.
+
+At each activation, choose the next goal based on the current evidence rather than blindly following an old task list. The long-term projects remain functional continuity/automation and rigorous crypto PAPER research unless the user changes them.
