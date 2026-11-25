@@ -1,0 +1,6 @@
+{
+  "host": "192.168.1.4",
+  "port": 8022,
+  "user": "u0_a379",
+  "key_path": "C:\\Users\\YOUR_USER\\.ssh\\eva_ed25519"
+}
