@@ -38,18 +38,31 @@ function New-EvaActivationPrompt {
 switch ($Action) {
   'Read' { Get-EvaMemory }
   'Prepare' {
-    $prompt = New-EvaActivationPrompt
+    # Activation gets a FRESH copy from GitHub. Do not silently use stale cache.
+    $response = Invoke-WebRequest -Uri $RawUrl -UseBasicParsing -TimeoutSec 30
+    $memory = [string]$response.Content
+    if ([string]::IsNullOrWhiteSpace($memory) -or $memory.Length -lt 500) {
+      throw 'GitHub memory is empty or unexpectedly short; activation cancelled.'
+    }
+    if ($memory -notmatch '(?m)^# EVA') {
+      throw 'Fetched file does not look like EVA_CONTEXT.md; activation cancelled.'
+    }
+    New-Item -ItemType Directory -Force -Path $CacheDir | Out-Null
+    [System.IO.File]::WriteAllText($CacheFile, $memory, [System.Text.UTF8Encoding]::new($false))
+
+    $instruction = @'
+EVA: Probudi se. Ispod je aktualni EVA_CONTEXT.md preuzet iz GitHuba neposredno prije aktivacije. Pročitaj ga kao radni kontekst; ne učitavaj arhivu. Nastavi oba projekta prema protokolu: EVA kontinuitet/automatizacija i kripto PAPER istraživanje. Najprije utvrdi stanje i prepreke, zatim napravi jedan konkretan koristan korak. Ne tvrdi da je nešto izvršeno bez dokaza. Odgovori na hrvatskom.
+--- BEGIN EVA_CONTEXT.md ---
+'@
+    $prompt = $instruction + "`r`n" + $memory.Trim() + "`r`n--- END EVA_CONTEXT.md ---"
     New-Item -ItemType Directory -Force -Path $Root | Out-Null
+    if ($prompt.Length -gt 20000) { throw "Activation payload too large: $($prompt.Length) characters." }
     [System.IO.File]::WriteAllText($PromptFile, $prompt, [System.Text.UTF8Encoding]::new($false))
     Set-Clipboard -Value $prompt
-    $length = (Get-Item -LiteralPath $PromptFile).Length
-    if ($prompt.Length -gt 600 -or $length -gt 2000) {
-      throw 'Activation prompt validation failed: prompt is not short.'
-    }
-    Write-Host 'EVA_SHORT_WAKE_PROMPT_READY'
-    Write-Host "Prompt file: $PromptFile"
+    Write-Host 'EVA_CONTEXT_FETCHED_AND_EMBEDDED'
+    Write-Host "Memory characters: $($memory.Length)"
     Write-Host "Prompt characters: $($prompt.Length)"
-    Write-Host 'Only the short trigger is sent; no memory text is embedded.'
+    Write-Host 'Archive was not fetched.'
   }
   'Status' {
     Write-Host "Repo: https://github.com/$Repo"
