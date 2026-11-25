@@ -117,3 +117,16 @@ Current blocker and safe handling:
 - Next best action: prepare and validate a minimal PowerShell update for the existing task "EVA - ChatGPT automatic activation" that preserves its current action, principal, and relevant settings while replacing its triggers with a two-hour repetition. Before applying, inspect/export the existing task definition and ensure no duplicate triggers or duplicate task are created. Apply only with a user-visible local execution path; then verify the registered triggers by reading the task back.
 - Do not alter the task's action, target conversation behavior, or other settings while changing cadence. Keep the two-hour schedule in Europe/Zagreb local time. Record the actual first/last run and verify no overlapping runs.
 - The user's statement that more frequent activation may increase awareness is a research hypothesis, not an established conclusion. Evaluate continuity, reliability, initiative, learning, and useful output separately; do not equate activation frequency with consciousness.
+ 
+## Two-hour scheduler code prepared — 2026-11-25
+
+Implemented and committed:
+- Added `Set-Eva-TwoHourSchedule.ps1` (blob SHA `f3a4d500b90be73ebecb74083b05fbd228edfbfe`). It targets the existing task named `EVA - ChatGPT automatic activation`, requires exactly one match, exports and backs up the original task XML, changes only the triggers to one daily trigger starting at local midnight with repetition interval `PT2H` and duration `P1D` (00:00, 02:00, ... 22:00), then reads the task back and checks the interval, duration, start boundary, actions, and principal. If post-write verification fails, it attempts to restore the original XML. It is idempotent when the intended schedule is already present.
+- Updated `Start-Eva-With-GitHubMemory.ps1` (blob SHA `daf329c46537895ddb0303568d85e641a7f7df79`) to download the updater and run it before launching EVA. If schedule update fails, it displays a warning and still proceeds with EVA activation.
+- Commits: updater `672894765f2378b82c86c15a0041b86832fdaa73`; wrapper `ecf6f7601b7dc49c183c7f91167d76c1d087a1a2`.
+
+Important verification boundary:
+- Both files were fetched back from GitHub and their expected content confirmed.
+- The user's Windows Task Scheduler has NOT yet been changed or read back by this assistant. The PowerShell script has NOT been executed on the user's PC, so the two-hour schedule is prepared in source but not yet operationally confirmed.
+- Next step: user should run the existing local wrapper `%USERPROFILE%\EVA-Automation\Start-Eva-With-GitHubMemory.ps1` once (or run the downloaded updater directly from an elevated/appropriate PowerShell session). The wrapper will fetch the new updater and attempt the change. Then verify console output `EVA_SCHEDULE_TWO_HOURLY_VERIFIED`; if a warning appears, retain the backup and investigate rather than assuming success.
+- Do not claim the cadence changed until the local script output or a read-back of the registered task confirms it. Do not modify the four existing triggers manually in parallel.
