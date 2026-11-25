@@ -95,3 +95,10 @@ At each fresh activation:
 - Next step: user runs the installer once, then performs one manual smoke test. Verify the ChatGPT message actually submits, both work streams are handled, and the resulting GitHub memory commit can be read back.
 
 - Further hardened `Install-EVA-GitHub-Memory.ps1`: it now refuses installation unless the existing `Start-Eva.ps1` explicitly references `EVA-Activation-Prompt.txt`; after changing the existing task action it re-reads the task and verifies the wrapper action and unchanged trigger count. Installer commit: `e21460fccb52146fc49146148bf39ba0d3c8c58c`.
+
+## Dated update — 2026-11-25, Windows PowerShell 5.1 encoding fix
+- User ran the installer and reported a PowerShell parser error at the Croatian word "potvrđena". The raw GitHub script is UTF-8 without a BOM; Windows PowerShell 5.1 interpreted non-ASCII source bytes using the legacy code page, turning a character into a curly quote and breaking a single-quoted string.
+- Corrected both `Install-EVA-GitHub-Memory.ps1` and `EVA-ExternalMemory.ps1` to contain ASCII-only PowerShell source, avoiding dependence on the host's script-file encoding. Functional prompt instructions remain present in transliterated form.
+- Updated commits: helper `6997a358b5369bb918e753180f8a9ffd9a078866`; installer `5238c84cb426e19a9f341e2ca7652f0c5ab84cad`.
+- Re-fetch verification confirms both scripts are ASCII-only in GitHub content. They have not yet been run on the user's Windows PC after this correction.
+- Next step: user reruns the same installer download/launch block; then inspect any new output. Do not claim installation succeeded until the installer prints its verified success marker.
