@@ -1,3 +1,4 @@
+﻿# UTF-8 BOM is intentional: Windows PowerShell 5.1 must parse Croatian diacritics correctly.
 [CmdletBinding()]
 param(
   [ValidateSet('Read','Prepare','Save','Status')]
@@ -32,7 +33,7 @@ function Get-EvaMemory {
 }
 
 function New-EvaActivationPrompt {
-  return 'EVA: Ucitaj EVA_CONTEXT.md s GitHuba preko integracije: https://raw.githubusercontent.com/limovmarijo-hash/eva-bridge/main/EVA_CONTEXT.md . Ako integracija nije dostupna, otvori tu izravnu poveznicu i procitaj datoteku. Ne ucitavaj arhivu. Zatim nastavi oba projekta prema protokolu, provjeri cinjenice, napravi jedan koristan korak i azuriraj memoriju.'
+  return 'EVA: Učitaj EVA_CONTEXT.md s GitHuba preko integracije: https://raw.githubusercontent.com/limovmarijo-hash/eva-bridge/main/EVA_CONTEXT.md. Ako integracija nije dostupna, otvori tu izravnu poveznicu i pročitaj datoteku. Ne učitavaj arhivu. Zatim nastavi oba projekta prema protokolu, provjeri činjenice, napravi jedan koristan korak i ažuriraj memoriju.'
 }
 
 switch ($Action) {
