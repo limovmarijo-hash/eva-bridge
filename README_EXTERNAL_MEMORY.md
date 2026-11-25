@@ -1,40 +1,57 @@
-# EVA external memory (Windows)
+# EVA GitHub memory + two-project activation cycle
 
-EVA_CONTEXT.md on the main branch is the canonical, portable project memory.
+Canonical durable context: [EVA_CONTEXT.md](./EVA_CONTEXT.md) on branch `main`.
 
-## Read / prepare an activation
+## What one scheduled activation is instructed to do
 
-From PowerShell:
+1. The Windows wrapper calls `EVA-ExternalMemory.ps1 -Action Prepare`.
+2. The helper downloads the latest public `EVA_CONTEXT.md` (or uses the last local cache if GitHub is unavailable), writes `EVA-Activation-Prompt.txt`, and copies the prompt to the clipboard.
+3. The existing `Start-Eva.ps1` launcher must paste and submit that prompt in the already configured ChatGPT conversation. It must not open a second browser or a different conversation.
+4. The prompt directs ChatGPT to work on BOTH active streams during that activation:
+   - EVA functional continuity / automation.
+   - Crypto strategy research in PAPER mode only, using the existing Library scripts and CSV artifacts.
+5. After doing the work, ChatGPT is instructed to fetch the latest `EVA_CONTEXT.md` through the connected GitHub integration, append a concise evidence-based entry, update the file on `main`, and verify the commit/read-back.
+6. The response must distinguish completed work from blockers. A write-back is not considered successful unless GitHub confirms it.
 
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\EVA-Automation\EVA-ExternalMemory.ps1" -Action Prepare
+## Important architecture boundary
 
-This downloads the latest public GitHub context, updates a local cache, writes
-EVA-Activation-Prompt.txt, and copies the complete activation prompt to the
-clipboard. If GitHub is temporarily unavailable, it uses the last cached copy.
-Paste the clipboard into the already-open, intended ChatGPT conversation.
-It does not open another browser window and does not pretend that pasting proves
-ChatGPT accepted the message.
+The PowerShell helper can fetch and prepare the context. It cannot know what ChatGPT actually did, and it cannot truthfully write the model's work results by itself.
 
-## Save a verified memory update
+The automatic write-back is therefore an assistant-side operation through the connected GitHub integration. If that integration is unavailable in a scheduled ChatGPT session, the assistant must report the blocker and must not claim that memory was saved.
 
-Install GitHub CLI (gh) and authenticate once on this Windows PC:
+This workflow does not provide continuous thought between activations. Work happens only when ChatGPT actually receives and processes the activation prompt.
 
-    winget install --id GitHub.cli
-    gh auth login
+## Install / update on Windows
 
-Then save only a concise, verified change:
+Run this once in PowerShell:
 
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\EVA-Automation\EVA-ExternalMemory.ps1" -Action Save -Entry "Opis potvrđene promjene i dokaz/provjera."
+```powershell
+$u = "https://raw.githubusercontent.com/limovmarijo-hash/eva-bridge/main/Install-EVA-GitHub-Memory.ps1"
+$p = "$env:TEMP\Install-EVA-GitHub-Memory.ps1"
+Invoke-WebRequest $u -OutFile $p
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File $p
+```
 
-The script fetches the latest file and its blob SHA immediately before appending,
-then commits the update to main. It never stores a token in the script or memory.
-Do not put passwords, API keys, private keys, personal secrets, or raw credentials
-in the durable context.
+The installer downloads the helper and wrapper and changes only the action of the existing scheduled task `EVA - ChatGPT automatic activation`; its existing triggers should remain unchanged.
 
-## Install the helper
+## One-time manual smoke test
 
-Copy EVA-ExternalMemory.ps1 into %USERPROFILE%\EVA-Automation\.
-The helper is deliberately separate from the existing tested Start-Eva.ps1:
-it does not replace the launcher, change Task Scheduler, or create duplicate tasks.
-For the next integration step, call EVA-ExternalMemory.ps1 -Action Prepare
-from the launcher before it pastes/sends the activation prompt.
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\EVA-Automation\Start-Eva-With-GitHubMemory.ps1"
+```
+
+Verify that the intended ChatGPT conversation receives the complete activation prompt and that it is actually submitted. Merely opening Chrome, copying to clipboard, or pasting text is not proof of message delivery.
+
+## Status commands
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\EVA-Automation\EVA-ExternalMemory.ps1" -Action Status
+```
+
+The optional `-Action Save -Entry "..."` is a manual Windows-side fallback requiring GitHub CLI authentication (`gh auth login`). It is NOT the normal automatic write-back path. The normal path is ChatGPT's connected GitHub integration after both work streams have been processed.
+
+## Safety and research constraints
+
+- Never store passwords, tokens, API keys, private keys, or other credentials in the durable context.
+- Trading research remains PAPER only: no live orders, funded account, or real-money execution.
+- Do not record plans as completed work. Include evidence or an explicit blocker.
