@@ -32,7 +32,7 @@ function Get-EvaMemory {
 }
 
 function New-EvaActivationPrompt {
-  return 'EVA: Otvori novi razgovor. Ucitaj aktualni EVA_CONTEXT.md s GitHuba (ne arhivu), zatim prema protokolu nastavi oba projekta: kontinuitet/automatizacija i kripto PAPER istrazivanje. Provjeri cinjenice, napravi jedan koristan korak i azuriraj memoriju.'
+  return 'EVA: Ucitaj EVA_CONTEXT.md s GitHuba preko integracije: https://raw.githubusercontent.com/limovmarijo-hash/eva-bridge/main/EVA_CONTEXT.md . Ako integracija nije dostupna, otvori tu izravnu poveznicu i procitaj datoteku. Ne ucitavaj arhivu. Zatim nastavi oba projekta prema protokolu, provjeri cinjenice, napravi jedan koristan korak i azuriraj memoriju.'
 }
 
 switch ($Action) {
