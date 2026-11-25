@@ -21,8 +21,8 @@ function Write-EvaLog([string]$Message) {
 & $Helper -Action Prepare -Root $Root
 if (-not (Test-Path $PromptFile)) { throw 'Aktivacijska poruka nije stvorena.' }
 $Prompt = [System.IO.File]::ReadAllText($PromptFile, [System.Text.Encoding]::UTF8).Trim()
-if ([string]::IsNullOrWhiteSpace($Prompt) -or $Prompt.Length -gt 600) {
-  throw 'Aktivacijska poruka je prazna ili neocekivano velika.'
+if ([string]::IsNullOrWhiteSpace($Prompt) -or $Prompt.Length -gt 20000) {
+  throw 'Aktivacijska poruka je prazna ili prelazi sigurnu granicu od 20000 znakova.'
 }
 
 if ($DryRun) {
