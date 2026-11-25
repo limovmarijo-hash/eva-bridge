@@ -14,7 +14,7 @@ This file is the portable working context for a fresh EVA/ChatGPT activation. It
 Confirmed:
 - Windows Task Scheduler task named `EVA - ChatGPT automatic activation` was created successfully.
 - Schedule: daily at 08:00, 12:00, 16:00, 20:00 (Europe/Zagreb local Windows time).
-- Launcher path: `%USERPROFILE%\EVA-Automation\Start-Eva.ps1`.
+- Launcher path: `%USERPROFILE%\\EVA-Automation\\Start-Eva.ps1`.
 - The first setup opened ChatGPT. The upgrade script then attempted to paste and send: “EVA AUTO-AKTIVACIJA: nastavi naš rad...”.
 - User observed two ChatGPT windows: first empty, then a window showing the activation message. The exact reason is not yet established; likely focus/window selection or duplicate browser launch behavior.
 - A fresh chat replied that it lacked old memory. This is expected: opening chatgpt.com and sending a generic prompt does not transfer the previous conversation transcript or all project history.
@@ -63,7 +63,6 @@ At each fresh activation:
 4. Update this file with a dated entry only after a meaningful verified change; preserve the previous content.
 5. Tell the user only about meaningful progress or an essential blocker. Never claim the scheduled activation itself guarantees continuous thought or full access to prior conversations.
 
-
 ## Dated update — 2026-11-25, Windows activation continuation
 - Retrieved the user's durable Library diary `Samostalni AI kontinuitet - dnevnik.md`; its latest visible entry is record 23 dated 2026-11-24. That record confirms the local SQLite continuity store prototype passed four isolated tests, but neither the PowerShell bridge nor the actual Android SSH connection had been tested on the user's devices.
 - Confirmed the GitHub repository is `limovmarijo-hash/eva-bridge`, public, default branch `main`, with push/admin permission available through the connected GitHub account.
@@ -73,12 +72,11 @@ At each fresh activation:
 - The previous upgrade produced two visible ChatGPT windows. The replacement removes the second explicit browser launch and does not navigate the active browser window again; it still relies on Windows UI focus and clipboard paste, so the first on-device test must verify whether the prompt actually appears and sends.
 - Next step: ask the user for one one-time run of the replacement installer only after this file and the script are verified. Do not ask them to inspect logs or Task Scheduler routinely. If they report a clear successful message in ChatGPT, the next work is to improve durable write-back of each cycle to this GitHub file, then separately resume end-to-end Android SSH bridge validation.
 
-
 ## Dated update — 2026-11-25, GitHub external-memory code prepared
 - Confirmed the repository is accessible through the connected GitHub integration and read the current durable context, continuity README, SQLite state module, and bridge scripts.
 - Added EVA-ExternalMemory.ps1: reads the current public GitHub context, caches it locally, prepares a complete activation prompt in EVA-Activation-Prompt.txt, and copies it to the Windows clipboard. It also supports GitHub write-back using GitHub CLI authentication (no token is embedded); it appends only a user-supplied verified note after fetching the latest file SHA.
 - Added Start-Eva-With-GitHubMemory.ps1, a wrapper that refreshes the external-memory prompt and then invokes the existing Start-Eva.ps1. It does not open a second browser itself.
-- Added Install-EVA-GitHub-Memory.ps1, intended to install the two scripts under %USERPROFILE%\EVA-Automation and change only the action of the existing scheduled task EVA - ChatGPT automatic activation, preserving its existing triggers.
+- Added Install-EVA-GitHub-Memory.ps1, intended to install the two scripts under %USERPROFILE%\\EVA-Automation and change only the action of the existing scheduled task EVA - ChatGPT automatic activation, preserving its existing triggers.
 - Added README_EXTERNAL_MEMORY.md with installation and GitHub CLI write-back instructions. All four new files were committed to GitHub.
 - Important: none of these new scripts has yet been run on the user's Windows PC. The wrapper assumes the existing launcher reads EVA-Activation-Prompt.txt, as indicated by the latest project handoff; this must be verified in the first on-device test. GitHub read/cache and append/write-back have not been runtime-tested on Windows.
 - Next step: run the one-time installer in an ordinary PowerShell window, then manually test the wrapper once and verify that the existing Chrome target receives the GitHub-backed prompt. Do not change the existing task schedule or create another task.
@@ -102,3 +100,10 @@ At each fresh activation:
 - Updated commits: helper `6997a358b5369bb918e753180f8a9ffd9a078866`; installer `5238c84cb426e19a9f341e2ca7652f0c5ab84cad`.
 - Re-fetch verification confirms both scripts are ASCII-only in GitHub content. They have not yet been run on the user's Windows PC after this correction.
 - Next step: user reruns the same installer download/launch block; then inspect any new output. Do not claim installation succeeded until the installer prints its verified success marker.
+
+## Dated update — 2026-11-25, activation reached exhausted ChatGPT conversation
+- User reports that the Windows activation opened the intended ChatGPT page and submitted the activation message, but ChatGPT displayed a full context-window warning and stopped.
+- This confirms the browser-opening/targeting/submission path worked in this test; it does not confirm that the activation prompt was processed or that either research stream ran.
+- Diagnosis: the configured destination is an already long conversation whose context capacity has been exhausted. Repeating activation in that same conversation is not a useful fix.
+- Next action: configure the launcher to target a newly created ChatGPT conversation, then run one smoke test there. Preserve this GitHub context as the portable handoff; the new conversation must receive it. Do not assume the full transcript transfers.
+- Before asking the user to edit anything, inspect the current wrapper/launcher and provide one consolidated minimal change.
