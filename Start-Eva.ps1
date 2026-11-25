@@ -49,7 +49,7 @@ $ChromeCandidates = @(
 $ChromeExe = $ChromeCandidates | Select-Object -First 1
 if (-not $ChromeExe) {
   Write-EvaLog 'FAILED: Google Chrome executable was not found; no activation message sent.'
-  throw 'Google Chrome nije pronađen. Instalacija ili putanja Chromea nije potvrđena; poruka nije poslana.'
+  throw 'Google Chrome nije pronadjen. Instalacija ili putanja Chromea nije potvrdjena; poruka nije poslana.'
 }
 
 Start-Process -FilePath $ChromeExe -ArgumentList @('--new-window', $NewChatUrl)
@@ -73,7 +73,7 @@ foreach ($Process in $Candidates) {
 }
 if (-not $Activated) {
   Write-EvaLog 'FAILED: browser window could not be activated; no send attempted.'
-  throw 'Nije pronađen aktivan prozor Edge/Chrome. Poruka nije poslana.'
+  throw 'Nije pronadjen aktivan prozor Edge/Chrome. Poruka nije poslana.'
 }
 
 Start-Sleep -Seconds 2
