@@ -32,7 +32,7 @@ function Get-EvaMemory {
 }
 
 function New-EvaActivationPrompt {
-  return 'EVA: Nastavi kontinuitet. Procitaj najnoviji EVA_CONTEXT.md iz GitHuba (limovmarijo-hash/eva-bridge, main). Obradi oba toka: A) EVA automatizacija; B) PAPER strategija, bez live trgovanja. Zatim dopuni isti GitHub zapis dokazima, blockerima i sljedecim korakom; provjeri commit i read-back. Ne lijepi memoriju u ovaj razgovor. Ne mijenjaj raspored ni Chrome cilj.'
+  return 'EVA: Probudi se. Ucitaj EVA_CONTEXT.md s GitHuba i nastavi oba projekta prema protokolu.'
 }
 
 switch ($Action) {
