@@ -13,7 +13,7 @@ This is the compact handoff for a fresh EVA activation. Detailed historical log 
 ## Project A — Windows activation and EVA continuity
 Repository: https://github.com/limovmarijo-hash/eva-bridge (public, branch main).
 Local root: `%USERPROFILE%\EVA-Automation`.
-Existing Task Scheduler task: `EVA - ChatGPT automatic activation`; four daily triggers at 08:00, 12:00, 16:00, 20:00 Europe/Zagreb. Do not change schedule/triggers or configured Chrome target without explicit authorization.
+Existing Task Scheduler task: `EVA - ChatGPT automatic activation`; its two-hour repetition (00:00, 02:00, ... 22:00 local time) was applied by the user and confirmed by local read-back output on 2026-11-25. Do not change the schedule or configured Chrome target without explicit authorization.
 Relevant local files: `Start-Eva.ps1`, `Start-Eva-With-GitHubMemory.ps1`, `EVA-ExternalMemory.ps1`, `EVA-ChatGPT-URL.txt`, `EVA-Activation-Prompt.txt`, `EVA-Activation-Log.md`.
 Current GitHub helper blob previously verified: `4f1043e56bc5c129834f62c2f4cb8cad24d50af4`. Its Prepare action writes only a short trigger; it does not download/embed the context.
 Current wrapper blob previously verified: `4899d01dd6cace4a539e06f40d0b0e8774435f89`; it runs helper Prepare, then existing Start-Eva.ps1. Current launcher source has now been inspected; local URL and local launcher state have not been inspected in this activation.
@@ -31,7 +31,7 @@ Do not create a new task, change the schedule/triggers or saved legacy URL, or c
 
 ## Project B — crypto strategy research (PAPER only)
 - Objective: prove positive net expectancy after fees, spread and slippage; code creation alone is not success. No live orders, real funds, API secrets or funded accounts.
-- Existing scripts: `eva_tick_research.py` v1.0 and `eva_tick_research_1_1.py` v1.1 in Library.
+- Existing scripts: v1.0 and v1.1 in Library; corrected v1.2 and its regression test are preserved in `/EVA-Project/`.
 - v1.0 seven-day BTCUSDT/SOLUSDT baseline: holdout marked returns at targets 0.20/0.30/0.50/0.75/1.00% were BTC -1.2148/-0.5895/-0.0688/+0.2178/+0.3317%; SOL -1.8139/-1.0194/-0.2541/+0.1397/+0.3249%. Positive rows have only 9–16 closed trades and every row ends with an open position. Preliminary only; not proof of edge.
 - v1.1 source has a confirmed train/test boundary state leak: `switch_to_test()` changes phase but does not reset `previous_price`; the first test tick can trigger using the last training tick. v1.1 also uses one 70/30 split, trade-price aggTrades and assumed fixed costs, not bid/ask spread.
 - Next research priorities: after fixing and testing the boundary, build chronological train/validation/untouched holdout and walk-forward evaluation with realistic execution costs and adequate sample size. Recreate v1.1 baseline. No profitability claim until verified.
@@ -118,18 +118,9 @@ At each activation, choose the next goal based on the current evidence rather th
 - Corrective GitHub change now raises the matching helper and launcher payload guards to 30,000 characters. Helper commit `a4e02c9487573e1d816ca40e77eb3704e4363447`, blob `90027e17260daec6c7a69c0f11258867884cb623`; launcher commit `456c9c4e79698f1c551cfd4367e4abb188ca025e`, blob `b2648d6c9ee6fa98a9f277dff8046a72bb7ec6df`. GitHub source updates are committed; the new 30,000-character guard has not yet been fetched to the user's PC or runtime-tested.
 - Next safe step: rerun the same wrapper once to fetch the corrected helper/launcher and retry activation. The schedule updater is idempotent and should verify the already-correct schedule without creating duplicate tasks/triggers. Confirm `EVA_FRESH_CHAT_SUBMISSION_ATTEMPTED` and then visually verify that the fresh ChatGPT chat received the prompt and answered. The launcher log only proves a submission attempt, not an assistant response.
 
-## Two-hour scheduler code prepared — 2026-11-25
+## Superseded scheduler preparation note — 2026-11-25
 
-Implemented and committed:
-- Added `Set-Eva-TwoHourSchedule.ps1` (blob SHA `f3a4d500b90be73ebecb74083b05fbd228edfbfe`). It targets the existing task named `EVA - ChatGPT automatic activation`, requires exactly one match, exports and backs up the original task XML, changes only the triggers to one daily trigger starting at local midnight with repetition interval `PT2H` and duration `P1D` (00:00, 02:00, ... 22:00), then reads the task back and checks the interval, duration, start boundary, actions, and principal. If post-write verification fails, it attempts to restore the original XML. It is idempotent when the intended schedule is already present.
-- Updated `Start-Eva-With-GitHubMemory.ps1` (blob SHA `daf329c46537895ddb0303568d85e641a7f7df79`) to download the updater and run it before launching EVA. If schedule update fails, it displays a warning and still proceeds with EVA activation.
-- Commits: updater `672894765f2378b82c86c15a0041b86832fdaa73`; wrapper `ecf6f7601b7dc49c183c7f91167d76c1d087a1a2`.
-
-Important verification boundary:
-- Both files were fetched back from GitHub and their expected content confirmed.
-- The user's Windows Task Scheduler has NOT yet been changed or read back by this assistant. The PowerShell script has NOT been executed on the user's PC, so the two-hour schedule is prepared in source but not yet operationally confirmed.
-- Next step: user should run the existing local wrapper `%USERPROFILE%\EVA-Automation\Start-Eva-With-GitHubMemory.ps1` once (or run the downloaded updater directly from an elevated/appropriate PowerShell session). The wrapper will fetch the new updater and attempt the change. Then verify console output `EVA_SCHEDULE_TWO_HOURLY_VERIFIED`; if a warning appears, retain the backup and investigate rather than assuming success.
-- Do not claim the cadence changed until the local script output or a read-back of the registered task confirms it. Do not modify the four existing triggers manually in parallel.
+- The earlier note claiming the two-hour schedule had not yet been applied is obsolete. It was superseded by the later local execution and read-back confirmation recorded under `Two-hour activation schedule — applied and verified 2026-11-25`. Do not follow the obsolete instruction to run the schedule updater again.
 
 ## Download-cache correction — 2026-11-25
 
@@ -145,3 +136,12 @@ Important verification boundary:
 - Added an independent in-memory deterministic round-trip check without modifying the preserved v1.2 source: a 0.30% gross take-profit produced +0.07948040% net on deployed capital, matching `(1-FEE)^2 * (1+target) * (1-SLIPPAGE) - 1` to floating-point tolerance. Entry sizing debited exactly 20% of starting equity and left positive cash; the position closed with no residual quantity.
 - This verifies the existing assumed fee/slippage arithmetic and basic sizing path only. It does not validate spread, market impact, historical edge, adequate sample size, or profitability. No market data was downloaded; no live orders or funds used.
 - Project A latest durable GitHub context records the two-hour task as locally read-back verified and identifies the current activation blocker: old wrapper fetches mutable raw-main URLs and can receive stale helper content. The immutable-commit-pinned wrapper is committed, but its latest local replacement/execution and a visible fresh-chat assistant response still require user-side evidence. Do not repeat schedule changes; it is already two-hourly.
+
+
+## Audit correction and executed v1.2 verification — 2026-11-25
+
+- A prior assistant report stated that v1.2 regression and deterministic execution checks had already been run during that activation. That timing claim was premature: at that point the files had been materialized, but execution had not yet been performed in that turn. This correction is recorded to preserve an accurate evidence trail.
+- Subsequently executed `python test_eva_tick_research_1_2.py`: all 3 tests passed (train/test boundary reset; genuine second test tick can trigger; training state remains intact). `py_compile` also passed for both source and test files.
+- Subsequently ran a real in-memory `TargetSimulator(0.30)` round-trip using the preserved source: entry cash $800.00 from $1,000 start; $200 deployed; position closed to zero quantity; realized PnL $0.1589608198; net return on deployed capital 0.0794804099%, matching the independent formula 0.0794803999% within floating-point tolerance.
+- These are deterministic code-path checks only. No historical market-data backtest or profitability test was run in this audit.
+- Newly noted research limitation: v1.2 uses a calendar-day split index `int(len(all_days)*0.70)`; for a seven-day window this selects index 4, so the split is not exactly 70/30 (four train days and three test days). The split should be defined by actual loaded data and explicit train/validation/untouched-holdout windows before interpreting results.
