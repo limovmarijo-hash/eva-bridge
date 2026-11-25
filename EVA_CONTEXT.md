@@ -107,17 +107,17 @@ Operating protocol:
 
 At each activation, choose the next goal based on the current evidence rather than blindly following an old task list. The long-term projects remain functional continuity/automation and rigorous crypto PAPER research unless the user changes them.
 
-## Requested activation cadence change — 2026-11-25
+## Two-hour activation schedule — applied and verified 2026-11-25
 
-The user explicitly authorizes increasing the EVA Windows activation cadence from four daily runs (08:00, 12:00, 16:00, 20:00 Europe/Zagreb) to one run every two hours, to improve useful work and functional continuity. This is authorization to change the schedule, not proof that it has been changed.
+- User explicitly authorized changing the Windows Task Scheduler cadence from four daily runs to every two hours.
+- User ran the updated GitHub wrapper locally. Console returned `EVA_SCHEDULE_TWO_HOURLY_VERIFIED` and listed 00:00, 02:00, 04:00, ... 22:00 in the computer's local time.
+- The updater exported a backup to `C:\Users\marij\EVA-Automation\TaskBackups\EVA_-_ChatGPT_automatic_activation-20261125-202302.xml`.
+- The updater read the registered task back and confirmed its two-hour repetition, preserved action and principal. This is direct local execution/read-back evidence.
+- The wrapper refreshed local `EVA-ExternalMemory.ps1`, `Start-Eva.ps1`, and `Set-Eva-TwoHourSchedule.ps1` before running the launcher.
+- The same run then stopped before browser submission because the generated activation payload was 20,868 characters and the helper's hard limit was 20,000. Thus the schedule change succeeded; that activation did not reach ChatGPT.
+- Corrective GitHub change now raises the matching helper and launcher payload guards to 30,000 characters. Helper commit `a4e02c9487573e1d816ca40e77eb3704e4363447`, blob `90027e17260daec6c7a69c0f11258867884cb623`; launcher commit `456c9c4e79698f1c551cfd4367e4abb188ca025e`, blob `b2648d6c9ee6fa98a9f277dff8046a72bb7ec6df`. GitHub source updates are committed; the new 30,000-character guard has not yet been fetched to the user's PC or runtime-tested.
+- Next safe step: rerun the same wrapper once to fetch the corrected helper/launcher and retry activation. The schedule updater is idempotent and should verify the already-correct schedule without creating duplicate tasks/triggers. Confirm `EVA_FRESH_CHAT_SUBMISSION_ATTEMPTED` and then visually verify that the fresh ChatGPT chat received the prompt and answered. The launcher log only proves a submission attempt, not an assistant response.
 
-Current blocker and safe handling:
-- The ChatGPT Automations scheduler available to this assistant supports recurring once/daily/weekly/monthly cadences only; hourly or custom recurring cadence is unavailable. Do not create a substitute schedule that falsely claims to run every two hours.
-- The four-run schedule is configured in the user's local Windows Task Scheduler. This assistant has no direct remote access to that Windows Task Scheduler in this conversation, so it cannot truthfully claim to have changed the local task.
-- Next best action: prepare and validate a minimal PowerShell update for the existing task "EVA - ChatGPT automatic activation" that preserves its current action, principal, and relevant settings while replacing its triggers with a two-hour repetition. Before applying, inspect/export the existing task definition and ensure no duplicate triggers or duplicate task are created. Apply only with a user-visible local execution path; then verify the registered triggers by reading the task back.
-- Do not alter the task's action, target conversation behavior, or other settings while changing cadence. Keep the two-hour schedule in Europe/Zagreb local time. Record the actual first/last run and verify no overlapping runs.
-- The user's statement that more frequent activation may increase awareness is a research hypothesis, not an established conclusion. Evaluate continuity, reliability, initiative, learning, and useful output separately; do not equate activation frequency with consciousness.
- 
 ## Two-hour scheduler code prepared — 2026-11-25
 
 Implemented and committed:
