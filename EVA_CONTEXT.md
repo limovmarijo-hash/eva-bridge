@@ -154,3 +154,20 @@ At each fresh activation:
 ### Security note
 - Library search surfaced a previously pasted OpenAI API credential in a saved troubleshooting transcript. The credential is not reproduced here and was not used. Treat it as exposed: revoke it in the OpenAI account and replace it only if still needed; remove/redact the saved transcript copy where possible. Do not store API secrets in EVA memory or logs.
 
+## Dated update — 2026-11-25 18:04 Europe/Zagreb, short-trigger correction and PAPER strategy audit
+### A) EVA functional continuity / automation
+- Re-read the latest `EVA_CONTEXT.md` from `main` before work; starting blob SHA: `fb749aa19f20804bacdcceeaec45db26adb058f5`.
+- Re-read current `EVA-ExternalMemory.ps1` and `README_EXTERNAL_MEMORY.md` from GitHub. Confirmed the helper's `Prepare` action constructs only a short wake-up instruction; it does not call `Get-EvaMemory`, download/cache the full context, or embed `EVA_CONTEXT.md` in the UI prompt. Helper blob SHA: `40a5d5787e81d18c6971cbd6d5f449edb0d50bdc`; README blob SHA: `0b255bf08581cea3ae7da1a44ab30a242cfbffb0`.
+- Recent Windows output supplied in the conversation: `EVA_SHORT_WAKE_PROMPT_READY`, prompt length 1,340 characters, and explicit confirmation that full external memory is NOT embedded. This verifies local `Prepare` ran and produced a short prompt; it does not independently prove that a scheduled run used the same exact helper blob SHA or that ChatGPT completed the GitHub read after submission.
+- No Windows schedule, trigger, Chrome target, or task was changed in this activation. Existing short-trigger design is preserved.
+- CONFIRMED: short-prompt implementation exists on GitHub and the local Prepare test reported success. NOT YET CONFIRMED: end-to-end scheduled activation → assistant GitHub read → both work streams → GitHub write-back.
+- NEXT STEP: keep the current task and Chrome target unchanged; at the next actual activation, verify the assistant-side GitHub read and commit/read-back rather than re-running installation.
+
+### B) Crypto strategy research — PAPER only
+- Searched the user's Library and read the full available source files `eva_tick_research.py` (11,333 bytes) and `eva_tick_research_1_1.py` (10,503 bytes). Duplicate copies of both scripts are present.
+- Audited version 1.1: fixed targets are 0.20%, 0.30%, 0.50%, 0.75%, and 1.00%; modeled fee is 0.10% per side, slippage 0.02% per side, and position size 20% of equity. It reports closed realized PnL separately from open-position liquidation-marked PnL.
+- Concrete code-review finding: `switch_to_test()` changes the phase but does not reset `previous_price`. The first test tick can therefore trigger an entry using the final training tick as its prior-price reference. This is a one-tick train/test boundary state leak; the transition should reset the previous-price state (or explicitly define a clean warm-up rule) before validation/holdout.
+- Methodology limitation: current script uses a single chronological 70/30 train/holdout split, not train/validation/untouched holdout or walk-forward. It also uses trade-price aggTrades with fixed assumed slippage rather than observed bid/ask spread; the modeled costs therefore do not establish execution realism.
+- Library search did not locate the named result artifacts `eva_tick_research_results.csv` or `eva_tick_research_results_1_1.csv`. No CSV values were inspected and no performance result is claimed in this activation.
+- CONFIRMED: source-level audit finding above. NOT CONFIRMED: any positive net edge; no accessible CSV result evidence and no fresh backtest was executed. No live orders or real-money activity.
+- NEXT STEP: revise the PAPER research harness to reset boundary state and add a chronological train/validation/holdout plus walk-forward protocol; obtain the actual CSV/data artifacts before evaluating performance.
