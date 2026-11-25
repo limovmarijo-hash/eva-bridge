@@ -1,10 +1,29 @@
+[CmdletBinding()]
+param([string]$Root = "$env:USERPROFILE\EVA-Automation")
 $ErrorActionPreference = 'Stop'
-$Root = "$env:USERPROFILE\EVA-Automation"
-$MemoryHelper = Join-Path $Root 'EVA-ExternalMemory.ps1'
+$Repo = 'limovmarijo-hash/eva-bridge'
+$Branch = 'main'
+$RawBase = "https://raw.githubusercontent.com/$Repo/$Branch"
+New-Item -ItemType Directory -Force -Path $Root | Out-Null
+
+$Files = @(
+  @{ Name = 'EVA-ExternalMemory.ps1'; Url = "$RawBase/EVA-ExternalMemory.ps1" },
+  @{ Name = 'Start-Eva.ps1'; Url = "$RawBase/Start-Eva.ps1" }
+)
+foreach ($File in $Files) {
+  $Destination = Join-Path $Root $File.Name
+  $Temp = "$Destination.download"
+  Invoke-WebRequest -Uri $File.Url -UseBasicParsing -OutFile $Temp -TimeoutSec 30
+  if (-not (Test-Path $Temp) -or (Get-Item $Temp).Length -lt 100) {
+    Remove-Item $Temp -Force -ErrorAction SilentlyContinue
+    throw "Preuzimanje nije valjano: $($File.Name)"
+  }
+  if (Test-Path $Destination) {
+    $Backup = "$Destination.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    Copy-Item $Destination $Backup -Force
+  }
+  Move-Item $Temp $Destination -Force
+  Write-Host "UPDATED $Destination"
+}
 $Launcher = Join-Path $Root 'Start-Eva.ps1'
-if (-not (Test-Path $MemoryHelper)) { throw "Nedostaje vanjska memorija: $MemoryHelper" }
-if (-not (Test-Path $Launcher)) { throw "Nedostaje postojeći launcher: $Launcher" }
-# Pripremi samo kratki okidac; ChatGPT cita vanjsku memoriju nakon aktivacije.
-& $MemoryHelper -Action Prepare -Root $Root
-# Postojeći launcher ostaje odgovoran za ciljani Chrome razgovor i slanje prompta.
-& $Launcher
+& $Launcher -Root $Root
