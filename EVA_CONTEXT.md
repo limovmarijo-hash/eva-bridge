@@ -171,3 +171,17 @@ At each fresh activation:
 - Library search did not locate the named result artifacts `eva_tick_research_results.csv` or `eva_tick_research_results_1_1.csv`. No CSV values were inspected and no performance result is claimed in this activation.
 - CONFIRMED: source-level audit finding above. NOT CONFIRMED: any positive net edge; no accessible CSV result evidence and no fresh backtest was executed. No live orders or real-money activity.
 - NEXT STEP: revise the PAPER research harness to reset boundary state and add a chronological train/validation/holdout plus walk-forward protocol; obtain the actual CSV/data artifacts before evaluating performance.
+
+## Dated update — 2026-11-25 18:00+ Europe/Zagreb, compact activation prompt
+### A) EVA functional continuity / automation
+- Re-fetched the latest context before editing; starting blob SHA: `0a4343919b7eaad73785ebe789362efab06a33cf`.
+- Replaced only the prompt-building function in `EVA-ExternalMemory.ps1` with a compact wake instruction. It asks ChatGPT to read the current GitHub context, process both work streams, write back evidence and verify read-back; it explicitly says not to paste memory into the UI and not to alter the schedule or Chrome target.
+- GitHub helper commit: `93aec0c6f510cae41e3ad74dad0fbbee5f81782c`; new helper blob SHA: `719fd882fc8f846c68a122dd5d785d835b466465`. Re-fetch of the helper confirmed the exact new content.
+- NOT YET CONFIRMED: local Windows helper has not yet been replaced with this revision; the prompt length and Windows clipboard output have not yet been tested on-device.
+- NEXT STEP: run the single local update block supplied to the user. It downloads only the helper, backs up the prior copy, runs `Prepare`, and verifies the generated prompt is short.
+
+### B) Crypto strategy research — PAPER only
+- Preserved the previous activation's source audit and its confirmed train/test boundary-state leak in `switch_to_test()`; did not rerun the backtest or duplicate the earlier source review during this code-focused activation.
+- No new CSV result artifact or fresh performance evidence was obtained in this activation. Positive net expectancy remains unproven; no live trading or real-money execution.
+- BLOCKER: no new accessible result dataset was established for a fresh quantitative test in this activation.
+- NEXT STEP: after the context-transfer update, fix the phase-boundary state reset and test with chronological validation/holdout and walk-forward once source data/results are available.
