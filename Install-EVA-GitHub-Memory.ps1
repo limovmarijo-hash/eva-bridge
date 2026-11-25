@@ -9,11 +9,11 @@ New-Item -ItemType Directory -Force -Path $Root | Out-Null
 
 $launcher = Join-Path $Root 'Start-Eva.ps1'
 if (-not (Test-Path $launcher)) {
-  throw "Postojeći Chrome launcher nije pronađen: $launcher"
+  throw "Postojeci Chrome launcher nije pronadjen: $launcher"
 }
 $launcherText = Get-Content -LiteralPath $launcher -Raw
 if ($launcherText -notmatch 'EVA-Activation-Prompt\.txt') {
-  throw 'Postojeći Start-Eva.ps1 ne čita EVA-Activation-Prompt.txt. Instalacija je zaustavljena da se ne bi aktivirao pogrešan ili nepotpun prompt.'
+  throw 'Postojeci Start-Eva.ps1 ne cita EVA-Activation-Prompt.txt. Instalacija je zaustavljena da se ne bi aktivirao pogresan ili nepotpun prompt.'
 }
 
 foreach ($name in $Files) {
@@ -36,16 +36,16 @@ Set-ScheduledTask -TaskName $TaskName -Action $action | Out-Null
 
 $verifiedTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction Stop
 if (@($verifiedTask.Triggers).Count -ne $triggerCountBefore) {
-  throw 'Broj postojećih okidača promijenio se. Provjeri zadatak u Task Scheduleru.'
+  throw 'Broj postojecih okidaca promijenio se. Provjeri zadatak u Task Scheduleru.'
 }
 if (-not $verifiedTask.Actions -or $verifiedTask.Actions[0].Arguments -notlike "*Start-Eva-With-GitHubMemory.ps1*") {
-  throw 'Nova akcija zadatka nije potvrđena. Instalacija nije verificirana.'
+  throw 'Nova akcija zadatka nije potvrdjena. Instalacija nije verificirana.'
 }
 
 Write-Host ''
 Write-Host 'EVA_GITHUB_MEMORY_INSTALLED_AND_TASK_ACTION_VERIFIED'
 Write-Host "Task: $TaskName"
-Write-Host "Postojeći broj okidača sačuvan: $triggerCountBefore"
-Write-Host 'Akcija sada pokreće wrapper koji osvježava GitHub memoriju prije Chrome launchera.'
-Write-Host 'Napomena: ovaj installer ne dokazuje da je ChatGPT prihvatio prompt; to se potvrđuje smoke testom.'
+Write-Host "Postojeci broj okidaca sacuvan: $triggerCountBefore"
+Write-Host 'Akcija sada pokrece wrapper koji osvjezava GitHub memoriju prije Chrome launchera.'
+Write-Host 'Napomena: ovaj installer ne dokazuje da je ChatGPT prihvatio prompt; to se potvrdjuje smoke testom.'
 Write-Host "Test: powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$wrapper`""
