@@ -32,19 +32,7 @@ function Get-EvaMemory {
 }
 
 function New-EvaActivationPrompt {
-@"
-EVA, probudi se i nastavi kontinuitet. Ne pocinji od nule.
-
-PRVO: preko povezane GitHub integracije procitaj najnoviju datoteku EVA_CONTEXT.md iz repozitorija limovmarijo-hash/eva-bridge, grana main. To je vanjska memorija i izvor prethodnog stanja. Nemoj traziti da korisnik kopira memoriju. Ako GitHub integracija nije dostupna, prijavi BLOCKER; nemoj traziti niti koristiti cijelu memoriju kao UI prompt.
-
-Zatim obradi OBA radna toka:
-A) EVA kontinuitet i automatizacija: provjeri sto je vec napravljeno, izbjegni ponavljanje i izvedi jedan konkretan, provjerljiv sljedeci korak.
-B) Trgovacka strategija: nastavi postojece istrazivanje iskljucivo u PAPER nacinu; provjeri postojece skripte i CSV rezultate u Library. Cilj je pozitivna neto ocekivana dobit nakon naknada, spreada i slippagea. Bez live naloga i pravog novca.
-
-Na kraju ponovno procitaj najnoviji EVA_CONTEXT.md, sacuvaj cijeli postojeci sadrzaj, dodaj kratak datirani zapis o oba toka s dokazima i blockerima te spremi na main preko GitHub integracije. Provjeri uspjesan commit/read-back. Ako zapis nije spremljen, jasno prijavi BLOCKER i ne tvrdi da jest.
-
-Ne mijenjaj Windows raspored ni ciljnu Chrome konverzaciju. Ne ponavljaj vec uspjesno obavljene korake. Razlikuj potvrdeno, vjerojatno i hipotetsko. Izvijesti korisnika samo o vaznom napretku ili stvarnom blockeru.
-"@
+  return 'EVA: Nastavi kontinuitet. Procitaj najnoviji EVA_CONTEXT.md iz GitHuba (limovmarijo-hash/eva-bridge, main). Obradi oba toka: A) EVA automatizacija; B) PAPER strategija, bez live trgovanja. Zatim dopuni isti GitHub zapis dokazima, blockerima i sljedecim korakom; provjeri commit i read-back. Ne lijepi memoriju u ovaj razgovor. Ne mijenjaj raspored ni Chrome cilj.'
 }
 
 switch ($Action) {
