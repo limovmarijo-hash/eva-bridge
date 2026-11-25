@@ -57,7 +57,7 @@ EVA: Probudi se. Ispod je aktualni EVA_CONTEXT.md preuzet iz GitHuba neposredno 
 '@
     $prompt = $instruction + "`r`n" + $memory.Trim() + "`r`n--- END EVA_CONTEXT.md ---"
     New-Item -ItemType Directory -Force -Path $Root | Out-Null
-    if ($prompt.Length -gt 20000) { throw "Activation payload too large: $($prompt.Length) characters." }
+    if ($prompt.Length -gt 30000) { throw "Activation payload too large: $($prompt.Length) characters (limit: 30000)." }
     [System.IO.File]::WriteAllText($PromptFile, $prompt, [System.Text.UTF8Encoding]::new($false))
     Set-Clipboard -Value $prompt
     Write-Host 'EVA_CONTEXT_FETCHED_AND_EMBEDDED'
