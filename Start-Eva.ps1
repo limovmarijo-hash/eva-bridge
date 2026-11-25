@@ -37,13 +37,29 @@ if ($DryRun) {
 # Opening the ChatGPT root creates a fresh chat rather than reusing the old /c/<id> URL.
 Set-Clipboard -Value $Prompt
 Write-EvaLog 'Fresh-chat activation started; legacy conversation URL deliberately ignored.'
-Start-Process -FilePath $NewChatUrl
-Write-Host 'Otvaram NOVI ChatGPT razgovor...'
+
+# Resolve Google Chrome explicitly; do not use the Windows default browser.
+$ChromeCandidates = @(
+  (Get-Command chrome.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -ErrorAction SilentlyContinue),
+  "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+  "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+  "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
+) | Where-Object { $_ -and (Test-Path $_) }
+
+$ChromeExe = $ChromeCandidates | Select-Object -First 1
+if (-not $ChromeExe) {
+  Write-EvaLog 'FAILED: Google Chrome executable was not found; no activation message sent.'
+  throw 'Google Chrome nije pronađen. Instalacija ili putanja Chromea nije potvrđena; poruka nije poslana.'
+}
+
+Start-Process -FilePath $ChromeExe -ArgumentList @('--new-window', $NewChatUrl)
+Write-EvaLog "Google Chrome launched explicitly: $ChromeExe"
+Write-Host 'Otvaram NOVI ChatGPT razgovor u Google Chromeu...'
 Start-Sleep -Seconds 20
 
 $Shell = New-Object -ComObject WScript.Shell
 $Activated = $false
-$Candidates = @(Get-Process -Name msedge,chrome -ErrorAction SilentlyContinue |
+$Candidates = @(Get-Process -Name chrome -ErrorAction SilentlyContinue |
   Where-Object { $_.MainWindowHandle -ne 0 } |
   Sort-Object StartTime -Descending)
 
