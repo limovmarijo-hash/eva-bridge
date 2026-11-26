@@ -204,3 +204,10 @@ At each activation, choose the next goal based on the current evidence rather th
 - The wrapper now pins the managed-window cleanup launcher commit `5defa9c82c0d0098a0692040d5e000fd6c6c4329`. GitHub source updates are committed; the local wrapper must fetch this pin at the next scheduled activation. No local Windows execution has yet verified the behavior.
 - One-time limitation: windows opened by earlier launcher versions were never recorded, so this feature cannot safely identify or close those existing windows. They require a one-time manual cleanup. Only windows created by this updated launcher are eligible for automatic cleanup.
 - Safety boundary: this is best-effort graceful close, not forced process termination. A foreground window is deliberately left open to avoid disrupting the user.
+
+## Local installation of managed-window cleanup pin — 2026-11-26
+- User supplied fresh Windows PowerShell read-back showing the registered Task Scheduler action still launches `C:\Users\marij\EVA-Automation\Start-Eva-With-GitHubMemory.ps1`; task action and schedule were not changed.
+- User first showed the local wrapper at the hardened launcher pin `f02f6ee6a44ddeb7ff3ca7346c39da15261929fb`, then successfully replaced that exact pin with managed-window cleanup launcher `5defa9c82c0d0098a0692040d5e000fd6c6c4329`. The final `Select-String` output confirms the new pin appears at the expected line.
+- User's commands also created backup `Start-Eva-With-GitHubMemory.ps1.bak-before-window-cleanup`.
+- Installation is prepared but not yet runtime-verified: the next scheduled wrapper run must fetch the pinned launcher, create/update `EVA-Owned-Chrome-Windows.json`, and log any cleanup of a prior registered EVA ChatGPT window. Do not trigger an extra run or alter the two-hour schedule merely to test it.
+- Pre-existing Chrome windows from before managed-window tracking are not automatically eligible for closure; they need one-time manual cleanup if the user wants them gone.
