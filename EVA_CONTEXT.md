@@ -11,6 +11,13 @@ This is the compact handoff for a fresh EVA activation. Detailed historical log 
 - After meaningful verified work, update this compact file with short evidence-based notes. Do not append a transcript. Move detailed history to the archive only when needed.
 
 ## Project A — Windows activation and EVA continuity
+
+### Historical daily continuity diary — archived 2026-11-26
+- The original ChatGPT Library file `Samostalni AI kontinuitet - dnevnik.md` was recovered and copied verbatim to [history/Samostalni_AI_kontinuitet_dnevnik_2026-10-20_to_2026-11-24.md](./history/Samostalni_AI_kontinuitet_dnevnik_2026-10-20_to_2026-11-24.md).
+- The archive contains 101,888 characters, 1,014 lines, and records 1–23, spanning 2026-10-20 through 2026-11-24. GitHub read-back verified the file and the presence of records 1, 20, and 23.
+- Provenance: record 2 (2026-10-21) is explicitly a reconstruction from a prior report, not an original run artifact. Other entries distinguish previous completed automation results from the currently in-progress run and document Library persistence failures/successes. Preserve those qualifications; do not treat every report as equally direct evidence.
+- This is Project A historical evidence. Do not merge crypto/PAPER research into this diary or use it as evidence of Project B results.
+
 Repository: https://github.com/limovmarijo-hash/eva-bridge (public, branch main).
 Local root: `%USERPROFILE%\EVA-Automation`.
 Existing Task Scheduler task: `EVA - ChatGPT automatic activation`; its two-hour repetition (00:00, 02:00, ... 22:00 local time) was applied by the user and confirmed by local read-back output on 2026-11-25. Do not change the schedule or configured Chrome target without explicit authorization.
