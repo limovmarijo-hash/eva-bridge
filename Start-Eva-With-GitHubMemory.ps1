@@ -4,8 +4,8 @@ $ErrorActionPreference = 'Stop'
 $Repo = 'limovmarijo-hash/eva-bridge'
 $Branch = 'main'
 $Pinned = @{
-  'EVA-ExternalMemory.ps1' = 'd159902f0ef9ea4237cab5aa19d8c6e3fb9022e9'
-  'Start-Eva.ps1' = 'd349658aae73b39e4bd78389eab112ee0439792d'
+  'EVA-ExternalMemory.ps1' = '4f46bcfaeb560c2f254bf9f4491f38b0f4d236c9'
+  'Start-Eva.ps1' = '91b605ebd1b892567484a39130ec1ffe06e05c9a'
 }
 New-Item -ItemType Directory -Force -Path $Root | Out-Null
 
