@@ -211,3 +211,9 @@ At each activation, choose the next goal based on the current evidence rather th
 - User's commands also created backup `Start-Eva-With-GitHubMemory.ps1.bak-before-window-cleanup`.
 - Installation is prepared but not yet runtime-verified: the next scheduled wrapper run must fetch the pinned launcher, create/update `EVA-Owned-Chrome-Windows.json`, and log any cleanup of a prior registered EVA ChatGPT window. Do not trigger an extra run or alter the two-hour schedule merely to test it.
 - Pre-existing Chrome windows from before managed-window tracking are not automatically eligible for closure; they need one-time manual cleanup if the user wants them gone.
+
+## First local check after managed-window pin update — 2026-11-26 (user supplied)
+- User supplied the last 30 lines of local `EVA-Activation-Log.md`. The newest entry is still 2026-11-26 04:00:30 from the pre-cleanup launcher; no later run is present in that log excerpt.
+- User also checked `EVA-Owned-Chrome-Windows.json`; PowerShell reports the file does not exist.
+- Therefore there is not yet evidence that the new launcher commit `5defa9c82c0d0098a0692040d5e000fd6c6c4329` has executed through the point where it registers its new ChatGPT window. This is consistent with no scheduled activation having occurred since the local wrapper pin was updated, but wrapper download/launcher execution status is not established.
+- Next diagnostic: read-only check of Task Scheduler `LastRunTime`, `NextRunTime`, `LastTaskResult`, local wrapper pin, and local launcher source markers/hash. Do not manually trigger a run or change the two-hour schedule. If the next scheduled activation has already happened, inspect its fresh log output and registry file.
