@@ -170,24 +170,32 @@ if ($EvaManagedWindows.Count -gt 0) {
       continue
     }
 
-    if ($ForegroundNow.ToInt64() -eq $HandleValue) {
-      $KeepRegistry += $Entry
-      Write-EvaLog "Previous EVA ChatGPT window is currently foreground; leaving it open: handle=$HandleValue."
-      continue
+    # Close the exact previously registered EVA window even when it is foreground.
+    # Never start another activation window if this close cannot be verified.
+    [void][EvaWin32]::PostMessage([IntPtr]$HandleValue, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+    $StillOpen = $true
+    for ($Wait = 0; $Wait -lt 50; $Wait++) {
+      Start-Sleep -Milliseconds 100
+      $StillOpen = @(
+        Get-ChromeWindows | Where-Object {
+          $_.Handle.ToInt64() -eq $HandleValue -and $_.ProcessId -eq [uint32]$PidValue
+        }
+      ).Count -gt 0
+      if (-not $StillOpen) { break }
     }
 
-    [void][EvaWin32]::PostMessage([IntPtr]$HandleValue, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
-    Start-Sleep -Milliseconds 800
-    $StillOpen = @(Get-ChromeWindows) | Where-Object { $_.Handle.ToInt64() -eq $HandleValue -and $_.ProcessId -eq [uint32]$PidValue }
     if ($StillOpen) {
       $KeepRegistry += $Entry
-      Write-EvaLog "Close requested but previous EVA window remains open; will retry next activation: handle=$HandleValue."
+      Write-EvaLog "FAILED: previous EVA-managed ChatGPT window did not close within 5 seconds; refusing to launch another window: handle=$HandleValue."
     } else {
       Write-EvaLog "Closed previous EVA-managed ChatGPT window: handle=$HandleValue."
     }
   }
   $EvaManagedWindows = @($KeepRegistry)
   Save-EvaWindowRegistry -Records $EvaManagedWindows
+  if ($EvaManagedWindows.Count -gt 0) {
+    throw "Prethodni EVA ChatGPT prozor nije se zatvorio. Ne otvaram novi prozor kako bih sprijecila gomilanje. Provjeri EVA-Activation-Log.md."
+  }
 }
 
 $Before = @(Get-ChromeWindows)
