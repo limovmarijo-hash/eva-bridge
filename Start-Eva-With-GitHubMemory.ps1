@@ -11,7 +11,7 @@ New-Item -ItemType Directory -Force -Path $Root | Out-Null
 
 $Files = @(
   @{ Name = 'EVA-ExternalMemory.ps1'; Url = "https://raw.githubusercontent.com/$Repo/$($Pinned['EVA-ExternalMemory.ps1'])/EVA-ExternalMemory.ps1" },
-  @{ Name = 'Start-Eva.ps1'; Url = "https://raw.githubusercontent.com/$Repo/$($Pinned['Start-Eva.ps1'])/Start-Eva.ps1" },
+  @{ Name = 'Start-Eva.ps1'; Url = "https://raw.githubusercontent.com/$Repo/$($Pinned['Start-Eva.ps1'])/Start-Eva.ps1" }
 )
 foreach ($File in $Files) {
   $Destination = Join-Path $Root $File.Name
