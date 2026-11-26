@@ -165,3 +165,17 @@ At each activation, choose the next goal based on the current evidence rather th
 - GitHub chronology: the safer launcher commit `f02f6ee6a44ddeb7ff3ca7346c39da15261929fb` was created at 2026-11-26 03:02:07 UTC (04:02:07 Europe/Zagreb), and wrapper pin commit `2b3ab4d4ebaba3d51c8394c1309e075ca52b1734` at 03:02:14 UTC. Therefore these GitHub changes post-date a nominal 04:00 activation and cannot be credited as its cause unless local timing differs. Current GitHub main wrapper now pins this safer launcher; local installation remains unverified.
 - Current safer launcher removes arbitrary-window fallback: it waits up to 45 seconds for a new Chrome window title containing ChatGPT, waits another 5 seconds, verifies the same window still exists, foregrounds it, waits 3 seconds and rechecks foreground before pasting/submitting. It still cannot prove the assistant accepted/responded; only a subsequent visible reply or local observation can.
 - Next diagnostic: inspect the last ~30 lines of local `%USERPROFILE%\EVA-Automation\EVA-Activation-Log.md`, plus Task Scheduler Last Run Time/Last Run Result and local SHA-256 of `Start-Eva.ps1` and `Start-Eva-With-GitHubMemory.ps1`. This will establish which revision ran and whether it logged ChatGPT-window identification, foreground verification and submission. No schedule changes.
+
+
+## Local evidence from the 04:00 activation — 2026-11-26 (user supplied)
+- User supplied the tail of local `%USERPROFILE%\\EVA-Automation\\EVA-Activation-Log.md`.
+- Local log confirms:
+  - 03:55:27 verified activation started; new target HWND 13306494 / PID 18908.
+  - 03:57:04 failed: ChatGPT composer not found after 90 seconds; nothing pasted or sent.
+  - 04:00:05 legacy/simple fresh-chat activation started; Chrome launched explicitly.
+  - 04:00:30 fresh-chat message submission attempted; assistant response not independently verified.
+- User reports the 04:00 self-activation succeeded and reached the conversation. This user observation is evidence of success, while the local log alone records only a submission attempt.
+- Crucial chronology: GitHub commits introducing the stricter launcher and wrapper pin were made at 04:02:07 and 04:02:14 Europe/Zagreb, respectively; therefore those commits cannot explain the 04:00:05 local run.
+- The 04:00 log markers correspond to the pre-hardening launcher implementation at commit `c263a52d44b8ff22f4d10cd2b3b01fb27b78bab4` (blob `06beab5afbfeaf0704dbd84ba8dea61902d9ed9c`), which used a fallback to the first new Chrome window after waiting. The user's local SHA256 values were provided (`Start-Eva.ps1`: `3CC124E02CF89DC540295C2F2C60FDE7F096C1D7A5DA377C6554AE158D1BAA23`; wrapper: `A085250D3FC4AC9DDDAABCF5E026E466C9B2ACFD1718414119A7C72E26EBF708`) but have not yet been matched against local file contents or computed remote SHA256. Do not claim exact byte-for-byte identity based on log markers alone.
+- Current GitHub main wrapper pins hardened launcher commit `f02f6ee6a44ddeb7ff3ca7346c39da15261929fb`; this is not proof that the local machine has refreshed it.
+- Next diagnostic: verify local wrapper's pinned commit and compare local launcher content/hash to the relevant GitHub raw source. Then monitor the next scheduled activation; do not change the two-hour schedule.
