@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 $Helper = Join-Path $Root 'EVA-ExternalMemory.ps1'
 $PromptFile = Join-Path $Root 'EVA-Activation-Prompt.txt'
 $LogFile = Join-Path $Root 'EVA-Activation-Log.md'
+$WindowRegistryFile = Join-Path $Root 'EVA-Owned-Chrome-Windows.json'
 $NewChatUrl = 'https://chatgpt.com/'
 
 New-Item -ItemType Directory -Force -Path $Root | Out-Null
@@ -66,6 +67,12 @@ public static class EvaWin32 {
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    public static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -107,6 +114,78 @@ function Get-ChromeWindows {
   $Pids = @(Get-Process -Name chrome -ErrorAction SilentlyContinue | ForEach-Object { [uint32]$_.Id })
   if ($Pids.Count -eq 0) { return @() }
   return @([EvaWin32]::GetChromeWindows($Pids))
+}
+
+function Save-EvaWindowRegistry([object[]]$Records) {
+  $TempRegistry = "$WindowRegistryFile.tmp"
+  $Json = ConvertTo-Json -InputObject @($Records) -Depth 5
+  [System.IO.File]::WriteAllText($TempRegistry, $Json, [System.Text.UTF8Encoding]::new($false))
+  Move-Item -LiteralPath $TempRegistry -Destination $WindowRegistryFile -Force
+}
+
+# Close only exact Chrome windows previously registered by this launcher.
+# Never enumerate-and-close arbitrary Chrome windows or terminate Chrome processes.
+$EvaManagedWindows = @()
+if (Test-Path -LiteralPath $WindowRegistryFile) {
+  try {
+    $RegistryText = [System.IO.File]::ReadAllText($WindowRegistryFile, [System.Text.Encoding]::UTF8)
+    if (-not [string]::IsNullOrWhiteSpace($RegistryText)) {
+      $EvaManagedWindows = @(ConvertFrom-Json -InputObject $RegistryText -ErrorAction Stop)
+    }
+  } catch {
+    Write-EvaLog "FAILED: EVA window registry is unreadable; refusing to launch another window. $($_.Exception.Message)"
+    throw "EVA evidencija Chrome prozora nije čitljiva. Ne otvaram novi prozor kako se ne bi gomilali."
+  }
+}
+
+if ($EvaManagedWindows.Count -gt 0) {
+  $WindowsNow = @(Get-ChromeWindows)
+  $ForegroundNow = [EvaWin32]::GetForegroundWindow()
+  $KeepRegistry = @()
+  foreach ($Entry in $EvaManagedWindows) {
+    $HandleValue = [Int64]0
+    $PidValue = [Int32]0
+    $StartTicks = [Int64]0
+    if (-not [Int64]::TryParse([string]$Entry.Handle, [ref]$HandleValue) -or
+        -not [Int32]::TryParse([string]$Entry.ProcessId, [ref]$PidValue) -or
+        -not [Int64]::TryParse([string]$Entry.ProcessStartTimeUtcTicks, [ref]$StartTicks)) {
+      Write-EvaLog 'WARNING: malformed EVA window registry entry discarded without closing any window.'
+      continue
+    }
+
+    $Candidate = $WindowsNow |
+      Where-Object { $_.Handle.ToInt64() -eq $HandleValue -and $_.ProcessId -eq [uint32]$PidValue } |
+      Select-Object -First 1
+    if (-not $Candidate) { continue }
+
+    $Proc = Get-Process -Id $PidValue -ErrorAction SilentlyContinue
+    if (-not $Proc) { continue }
+    $ActualStartTicks = $Proc.StartTime.ToUniversalTime().Ticks
+
+    # A reused HWND/PID or a window whose title no longer identifies ChatGPT is never closed.
+    if ($ActualStartTicks -ne $StartTicks -or $Candidate.Title -notmatch 'ChatGPT') {
+      Write-EvaLog "EVA registry entry no longer matches its original ChatGPT window; left untouched: handle=$HandleValue."
+      continue
+    }
+
+    if ($ForegroundNow.ToInt64() -eq $HandleValue) {
+      $KeepRegistry += $Entry
+      Write-EvaLog "Previous EVA ChatGPT window is currently foreground; leaving it open: handle=$HandleValue."
+      continue
+    }
+
+    [void][EvaWin32]::PostMessage([IntPtr]$HandleValue, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+    Start-Sleep -Milliseconds 800
+    $StillOpen = @(Get-ChromeWindows) | Where-Object { $_.Handle.ToInt64() -eq $HandleValue -and $_.ProcessId -eq [uint32]$PidValue }
+    if ($StillOpen) {
+      $KeepRegistry += $Entry
+      Write-EvaLog "Close requested but previous EVA window remains open; will retry next activation: handle=$HandleValue."
+    } else {
+      Write-EvaLog "Closed previous EVA-managed ChatGPT window: handle=$HandleValue."
+    }
+  }
+  $EvaManagedWindows = @($KeepRegistry)
+  Save-EvaWindowRegistry -Records $EvaManagedWindows
 }
 
 $Before = @(Get-ChromeWindows)
@@ -162,6 +241,17 @@ if (-not $StableWindow) {
   throw 'ChatGPT prozor nije ostao potvrđen nakon učitavanja. Poruka nije poslana.'
 }
 $TargetWindow = $StableWindow
+
+# Register the exact newly-created ChatGPT window so only this window can be
+# considered for cleanup on a later activation.
+$TargetProcess = Get-Process -Id ([int]$TargetWindow.ProcessId) -ErrorAction Stop
+$EvaManagedWindows += [pscustomobject]@{
+  Handle = [string]$TargetWindow.Handle.ToInt64()
+  ProcessId = [int]$TargetWindow.ProcessId
+  ProcessStartTimeUtcTicks = [string]$TargetProcess.StartTime.ToUniversalTime().Ticks
+}
+Save-EvaWindowRegistry -Records $EvaManagedWindows
+Write-EvaLog "Registered EVA-managed ChatGPT window for next-run cleanup: handle=$($TargetWindow.Handle.ToInt64()), pid=$($TargetWindow.ProcessId)"
 
 Write-EvaLog "Target ChatGPT window confirmed after stabilization: handle=$($TargetWindow.Handle.ToInt64()), pid=$($TargetWindow.ProcessId), title='$($TargetWindow.Title)'"
 Write-Host "Potvrđen NOVI ChatGPT prozor: $($TargetWindow.Title)"
