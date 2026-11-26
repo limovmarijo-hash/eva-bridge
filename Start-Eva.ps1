@@ -133,7 +133,9 @@ Write-EvaLog "Google Chrome launched explicitly: $ChromeExe"
 Write-Host 'Otvaram NOVI ChatGPT razgovor u Google Chromeu...'
 
 $TargetWindow = $null
-for ($i = 0; $i -lt 30 -and -not $TargetWindow; $i++) {
+# Never fall back to an arbitrary new Chrome window: it may still be a blank/loading tab.
+# Wait until the browser itself reports a ChatGPT page title before considering submission.
+for ($i = 0; $i -lt 45 -and -not $TargetWindow; $i++) {
   Start-Sleep -Seconds 1
   $After = @(Get-ChromeWindows)
   $NewWindows = @($After | Where-Object {
@@ -143,19 +145,26 @@ for ($i = 0; $i -lt 30 -and -not $TargetWindow; $i++) {
   $TargetWindow = $NewWindows |
     Where-Object { $_.Title -match 'ChatGPT' } |
     Select-Object -First 1
-
-  if (-not $TargetWindow -and $NewWindows.Count -gt 0 -and $i -ge 10) {
-    $TargetWindow = $NewWindows | Select-Object -First 1
-  }
 }
 
 if (-not $TargetWindow) {
-  Write-EvaLog 'FAILED: no newly created Chrome top-level window was identified; no send attempted.'
-  throw 'Novi Chrome prozor nije pouzdano identificiran. Poruka nije poslana.'
+  Write-EvaLog 'FAILED: no newly created Chrome window with a ChatGPT title appeared within 45 seconds; no send attempted.'
+  throw 'ChatGPT nije potvrđen u novom Chrome prozoru unutar 45 sekundi. Poruka nije poslana.'
 }
 
-Write-EvaLog "Target Chrome window identified: handle=$($TargetWindow.Handle.ToInt64()), pid=$($TargetWindow.ProcessId), title='$($TargetWindow.Title)'"
-Write-Host "Pronađen NOVI ChatGPT prozor: $($TargetWindow.Title)"
+# Allow the page to finish rendering, then confirm the same window still exists and is a ChatGPT page.
+Start-Sleep -Seconds 5
+$StableWindow = @(Get-ChromeWindows) |
+  Where-Object { $_.Handle -eq $TargetWindow.Handle -and $_.Title -match 'ChatGPT' } |
+  Select-Object -First 1
+if (-not $StableWindow) {
+  Write-EvaLog 'FAILED: ChatGPT window did not remain identifiable after stabilization; no send attempted.'
+  throw 'ChatGPT prozor nije ostao potvrđen nakon učitavanja. Poruka nije poslana.'
+}
+$TargetWindow = $StableWindow
+
+Write-EvaLog "Target ChatGPT window confirmed after stabilization: handle=$($TargetWindow.Handle.ToInt64()), pid=$($TargetWindow.ProcessId), title='$($TargetWindow.Title)'"
+Write-Host "Potvrđen NOVI ChatGPT prozor: $($TargetWindow.Title)"
 
 if ([EvaWin32]::IsIconic($TargetWindow.Handle)) {
   [EvaWin32]::ShowWindowAsync($TargetWindow.Handle, 9) | Out-Null
@@ -169,7 +178,15 @@ if ($Foreground -ne $TargetWindow.Handle) {
   throw 'Novi ChatGPT prozor nije mogao biti postavljen u prvi plan. Poruka nije poslana da se izbjegne slanje u pogrešan prozor.'
 }
 
-Write-EvaLog 'Target window is confirmed foreground; sending clipboard paste.'
+# Give the focused ChatGPT page an additional moment to finish initializing its composer.
+Start-Sleep -Seconds 3
+$Foreground = [EvaWin32]::GetForegroundWindow()
+if ($Foreground -ne $TargetWindow.Handle) {
+  Write-EvaLog 'FAILED: ChatGPT lost foreground during stabilization; no send attempted.'
+  throw 'ChatGPT prozor je izgubio fokus prije slanja. Poruka nije poslana.'
+}
+
+Write-EvaLog 'ChatGPT window remained foreground after stabilization; sending clipboard paste.'
 $Shell = New-Object -ComObject WScript.Shell
 $Shell.SendKeys('^v')
 Start-Sleep -Milliseconds 700
