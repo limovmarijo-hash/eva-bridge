@@ -34,7 +34,7 @@ if ($DryRun) {
 }
 
 # We deliberately ignore EVA-ChatGPT-URL.txt: it points to the exhausted legacy chat.
-Set-Clipboard -Value $Prompt
+# Clipboard is populated ONLY after the composer is positively identified and focused.
 
 # Use Win32 top-level window handles rather than Chrome process IDs.
 # Chrome can host multiple browser windows in the same process, so AppActivate(PID)
@@ -276,13 +276,88 @@ if ($Foreground -ne $TargetWindow.Handle) {
   throw 'ChatGPT prozor je izgubio fokus prije slanja. Poruka nije poslana.'
 }
 
-Write-EvaLog 'ChatGPT window remained foreground after stabilization; sending clipboard paste.'
+# SAFETY: identify the actual ChatGPT composer through Windows UI Automation.
+# If the composer cannot be positively identified and focused, abort without pasting.
+try {
+  Add-Type -AssemblyName UIAutomationClient
+  Add-Type -AssemblyName UIAutomationTypes
+} catch {
+  Write-EvaLog "FAILED: Windows UI Automation assemblies unavailable; no paste or send. $($_.Exception.Message)"
+  throw 'Windows ne može potvrditi polje za poruku. Ništa nije zalijepljeno niti poslano.'
+}
+
+function Get-EvaComposer {
+  $RootElement = [System.Windows.Automation.AutomationElement]::FromHandle($TargetWindow.Handle)
+  if (-not $RootElement) { return $null }
+  $All = $RootElement.FindAll(
+    [System.Windows.Automation.TreeScope]::Descendants,
+    [System.Windows.Automation.Condition]::TrueCondition
+  )
+  foreach ($Element in $All) {
+    try {
+      $Name = [string]$Element.Current.Name
+      $Type = $Element.Current.ControlType
+      $Focusable = $Element.Current.IsKeyboardFocusable
+      if ($Focusable -and
+          ($Type -eq [System.Windows.Automation.ControlType]::Edit -or
+           $Type -eq [System.Windows.Automation.ControlType]::Document) -and
+          $Name -match '(?i)(message chatgpt|ask anything|send a message|message to chatgpt|pošalji poruku|upišite poruku|unesite poruku)') {
+        return $Element
+      }
+    } catch { }
+  }
+  return $null
+}
+
+function Test-EvaComposerFocused([System.Windows.Automation.AutomationElement]$Composer) {
+  if (-not $Composer) { return $false }
+  try {
+    $Focused = [System.Windows.Automation.AutomationElement]::FocusedElement
+    if (-not $Focused) { return $false }
+    $ExpectedId = ($Composer.GetRuntimeId() -join ',')
+    $FocusedId = ($Focused.GetRuntimeId() -join ',')
+    return ($ExpectedId -eq $FocusedId)
+  } catch { return $false }
+}
+
+if ([EvaWin32]::GetForegroundWindow() -ne $TargetWindow.Handle) {
+  Write-EvaLog 'FAILED: ChatGPT window lost foreground before composer detection; no paste or send.'
+  throw 'ChatGPT više nije aktivni prozor. Ništa nije zalijepljeno niti poslano.'
+}
+
+$Composer = Get-EvaComposer
+if (-not $Composer) {
+  Write-EvaLog 'FAILED: named ChatGPT composer not found by UI Automation; no paste or send.'
+  throw 'Nisam mogla pouzdano pronaći polje za pisanje poruke. Ništa nije zalijepljeno niti poslano.'
+}
+
+try { $Composer.SetFocus() } catch {
+  Write-EvaLog "FAILED: composer SetFocus failed; no paste or send. $($_.Exception.Message)"
+  throw 'Polje poruke nije prihvatilo fokus. Ništa nije zalijepljeno niti poslano.'
+}
+Start-Sleep -Milliseconds 500
+
+if ([EvaWin32]::GetForegroundWindow() -ne $TargetWindow.Handle -or
+    -not (Test-EvaComposerFocused -Composer $Composer)) {
+  Write-EvaLog 'FAILED: composer focus could not be independently verified; no paste or send.'
+  throw 'Fokus polja poruke nije potvrđen. Ništa nije zalijepljeno niti poslano.'
+}
+
+# Only now is the short trigger copied and pasted. The address bar is never used as fallback.
+Set-Clipboard -Value $Prompt
 $Shell = New-Object -ComObject WScript.Shell
 $Shell.SendKeys('^v')
-Start-Sleep -Milliseconds 700
+Start-Sleep -Milliseconds 900
+
+if ([EvaWin32]::GetForegroundWindow() -ne $TargetWindow.Handle -or
+    -not (Test-EvaComposerFocused -Composer $Composer)) {
+  Write-EvaLog 'FAILED: composer focus changed after paste; Enter suppressed to prevent accidental navigation/submission.'
+  throw 'Nakon lijepljenja fokus više nije potvrđen. Enter nije pritisnut.'
+}
+
 $Shell.SendKeys('{ENTER}')
 Start-Sleep -Seconds 2
 
-Write-EvaLog 'Fresh-chat message submitted to the newly identified foreground window; assistant response not independently verified.'
+Write-EvaLog 'Fresh-chat trigger submitted only after UI Automation positively identified and focused the ChatGPT composer; assistant response not independently verified.'
 Write-Host 'EVA_FRESH_CHAT_SUBMISSION_ATTEMPTED'
-Write-Host 'Poruka je poslana u novootvoreni prozor koji je skripta sama identificirala.'
+Write-Host 'Polje za poruku potvrđeno; kratka aktivacijska poruka poslana.'
