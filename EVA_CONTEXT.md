@@ -179,3 +179,13 @@ At each activation, choose the next goal based on the current evidence rather th
 - The 04:00 log markers correspond to the pre-hardening launcher implementation at commit `c263a52d44b8ff22f4d10cd2b3b01fb27b78bab4` (blob `06beab5afbfeaf0704dbd84ba8dea61902d9ed9c`), which used a fallback to the first new Chrome window after waiting. The user's local SHA256 values were provided (`Start-Eva.ps1`: `3CC124E02CF89DC540295C2F2C60FDE7F096C1D7A5DA377C6554AE158D1BAA23`; wrapper: `A085250D3FC4AC9DDDAABCF5E026E466C9B2ACFD1718414119A7C72E26EBF708`) but have not yet been matched against local file contents or computed remote SHA256. Do not claim exact byte-for-byte identity based on log markers alone.
 - Current GitHub main wrapper pins hardened launcher commit `f02f6ee6a44ddeb7ff3ca7346c39da15261929fb`; this is not proof that the local machine has refreshed it.
 - Next diagnostic: verify local wrapper's pinned commit and compare local launcher content/hash to the relevant GitHub raw source. Then monitor the next scheduled activation; do not change the two-hour schedule.
+
+
+## Local wrapper/launcher pin diagnosis — 2026-11-26
+- User ran Select-String against local files. Local wrapper pins `Start-Eva.ps1` to `456c9c4e79698f1c551cfd4367e4abb188ca025e`.
+- GitHub commit metadata confirms that pin is commit dated 2026-11-25T19:23:43Z (20:23:43 Europe/Zagreb), message "EVA: align launcher payload limit with helper".
+- Fetching the launcher at that exact pin shows the older implementation: no ChatGPT-title-based window identification or 45-second stabilization checks. It uses a 20-second wait and activates the browser window by simpler logic.
+- The hardened launcher is commit `f02f6ee6a44ddeb7ff3ca7346c39da15261929fb`, dated 2026-11-26T03:02:07Z (04:02:07 Europe/Zagreb), and contains 45-second ChatGPT title detection, stabilization, and foreground rechecks.
+- GitHub main wrapper currently pins `f02f6ee6...`, but the user's local wrapper still pins `456c9c4...`. Therefore current GitHub main changes have not yet reached the local wrapper. The local launcher likely reflects the old generation; exact byte-level match is not established because user-provided SHA256 has not been computed for remote file contents.
+- The Select-String match for `Select-Object -First 1` at line 49 is selecting the first Chrome executable candidate, not the first Chrome window; do not confuse the two.
+- Next diagnostic is read-only: inspect Task Scheduler action to confirm whether the scheduled task launches the local wrapper or the launcher directly. Use `(Get-ScheduledTask -TaskName 'EVA - ChatGPT automatic activation').Actions | Format-List Execute,Arguments,WorkingDirectory`. Do not change the task or recurrence.
