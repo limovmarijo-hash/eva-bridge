@@ -39,7 +39,8 @@ if ($DryRun) {
 # Use Win32 top-level window handles rather than Chrome process IDs.
 # Chrome can host multiple browser windows in the same process, so AppActivate(PID)
 # is not sufficient to identify the exact window just created.
-Add-Type -TypeDefinition @'
+if (-not ([System.Management.Automation.PSTypeName]'EvaWin32').Type) {
+  Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -109,6 +110,7 @@ public static class EvaWin32 {
     }
 }
 '@
+}
 
 function Get-ChromeWindows {
   $Pids = @(Get-Process -Name chrome -ErrorAction SilentlyContinue | ForEach-Object { [uint32]$_.Id })
