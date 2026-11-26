@@ -134,7 +134,7 @@ if (Test-Path -LiteralPath $WindowRegistryFile) {
     }
   } catch {
     Write-EvaLog "FAILED: EVA window registry is unreadable; refusing to launch another window. $($_.Exception.Message)"
-    throw "EVA evidencija Chrome prozora nije čitljiva. Ne otvaram novi prozor kako se ne bi gomilali."
+    throw "EVA evidencija Chrome prozora nije citljiva. Ne otvaram novi prozor kako se ne bi gomilali."
   }
 }
 
@@ -228,7 +228,7 @@ for ($i = 0; $i -lt 45 -and -not $TargetWindow; $i++) {
 
 if (-not $TargetWindow) {
   Write-EvaLog 'FAILED: no newly created Chrome window with a ChatGPT title appeared within 45 seconds; no send attempted.'
-  throw 'ChatGPT nije potvrđen u novom Chrome prozoru unutar 45 sekundi. Poruka nije poslana.'
+  throw 'ChatGPT nije potvrdjen u novom Chrome prozoru unutar 45 sekundi. Poruka nije poslana.'
 }
 
 # Allow the page to finish rendering, then confirm the same window still exists and is a ChatGPT page.
@@ -238,7 +238,7 @@ $StableWindow = @(Get-ChromeWindows) |
   Select-Object -First 1
 if (-not $StableWindow) {
   Write-EvaLog 'FAILED: ChatGPT window did not remain identifiable after stabilization; no send attempted.'
-  throw 'ChatGPT prozor nije ostao potvrđen nakon učitavanja. Poruka nije poslana.'
+  throw 'ChatGPT prozor nije ostao potvrdjen nakon ucitavanja. Poruka nije poslana.'
 }
 $TargetWindow = $StableWindow
 
@@ -254,7 +254,7 @@ Save-EvaWindowRegistry -Records $EvaManagedWindows
 Write-EvaLog "Registered EVA-managed ChatGPT window for next-run cleanup: handle=$($TargetWindow.Handle.ToInt64()), pid=$($TargetWindow.ProcessId)"
 
 Write-EvaLog "Target ChatGPT window confirmed after stabilization: handle=$($TargetWindow.Handle.ToInt64()), pid=$($TargetWindow.ProcessId), title='$($TargetWindow.Title)'"
-Write-Host "Potvrđen NOVI ChatGPT prozor: $($TargetWindow.Title)"
+Write-Host "Potvrdjen NOVI ChatGPT prozor: $($TargetWindow.Title)"
 
 if ([EvaWin32]::IsIconic($TargetWindow.Handle)) {
   [EvaWin32]::ShowWindowAsync($TargetWindow.Handle, 9) | Out-Null
@@ -265,7 +265,7 @@ Start-Sleep -Seconds 1
 $Foreground = [EvaWin32]::GetForegroundWindow()
 if ($Foreground -ne $TargetWindow.Handle) {
   Write-EvaLog "FAILED: target window could not be brought to foreground; foreground=$($Foreground.ToInt64()), target=$($TargetWindow.Handle.ToInt64()). No send attempted."
-  throw 'Novi ChatGPT prozor nije mogao biti postavljen u prvi plan. Poruka nije poslana da se izbjegne slanje u pogrešan prozor.'
+  throw 'Novi ChatGPT prozor nije mogao biti postavljen u prvi plan. Poruka nije poslana da se izbjegne slanje u pogresan prozor.'
 }
 
 # Give the focused ChatGPT page an additional moment to finish initializing its composer.
@@ -283,7 +283,7 @@ try {
   Add-Type -AssemblyName UIAutomationTypes
 } catch {
   Write-EvaLog "FAILED: Windows UI Automation assemblies unavailable; no paste or send. $($_.Exception.Message)"
-  throw 'Windows ne može potvrditi polje za poruku. Ništa nije zalijepljeno niti poslano.'
+  throw 'Windows ne moze potvrditi polje za poruku. Nista nije zalijepljeno niti poslano.'
 }
 
 function Get-EvaComposer {
@@ -301,7 +301,7 @@ function Get-EvaComposer {
       if ($Focusable -and
           ($Type -eq [System.Windows.Automation.ControlType]::Edit -or
            $Type -eq [System.Windows.Automation.ControlType]::Document) -and
-          $Name -match '(?i)(message chatgpt|ask anything|send a message|message to chatgpt|pošalji poruku|upišite poruku|unesite poruku)') {
+          $Name -match '(?i)(message chatgpt|ask anything|send a message|message to chatgpt|posalji poruku|upisite poruku|unesite poruku)') {
         return $Element
       }
     } catch { }
@@ -322,25 +322,25 @@ function Test-EvaComposerFocused([System.Windows.Automation.AutomationElement]$C
 
 if ([EvaWin32]::GetForegroundWindow() -ne $TargetWindow.Handle) {
   Write-EvaLog 'FAILED: ChatGPT window lost foreground before composer detection; no paste or send.'
-  throw 'ChatGPT više nije aktivni prozor. Ništa nije zalijepljeno niti poslano.'
+  throw 'ChatGPT vise nije aktivni prozor. Nista nije zalijepljeno niti poslano.'
 }
 
 $Composer = Get-EvaComposer
 if (-not $Composer) {
   Write-EvaLog 'FAILED: named ChatGPT composer not found by UI Automation; no paste or send.'
-  throw 'Nisam mogla pouzdano pronaći polje za pisanje poruke. Ništa nije zalijepljeno niti poslano.'
+  throw 'Nisam mogla pouzdano pronaci polje za pisanje poruke. Nista nije zalijepljeno niti poslano.'
 }
 
 try { $Composer.SetFocus() } catch {
   Write-EvaLog "FAILED: composer SetFocus failed; no paste or send. $($_.Exception.Message)"
-  throw 'Polje poruke nije prihvatilo fokus. Ništa nije zalijepljeno niti poslano.'
+  throw 'Polje poruke nije prihvatilo fokus. Nista nije zalijepljeno niti poslano.'
 }
 Start-Sleep -Milliseconds 500
 
 if ([EvaWin32]::GetForegroundWindow() -ne $TargetWindow.Handle -or
     -not (Test-EvaComposerFocused -Composer $Composer)) {
   Write-EvaLog 'FAILED: composer focus could not be independently verified; no paste or send.'
-  throw 'Fokus polja poruke nije potvrđen. Ništa nije zalijepljeno niti poslano.'
+  throw 'Fokus polja poruke nije potvrdjen. Nista nije zalijepljeno niti poslano.'
 }
 
 # Only now is the short trigger copied and pasted. The address bar is never used as fallback.
@@ -352,7 +352,7 @@ Start-Sleep -Milliseconds 900
 if ([EvaWin32]::GetForegroundWindow() -ne $TargetWindow.Handle -or
     -not (Test-EvaComposerFocused -Composer $Composer)) {
   Write-EvaLog 'FAILED: composer focus changed after paste; Enter suppressed to prevent accidental navigation/submission.'
-  throw 'Nakon lijepljenja fokus više nije potvrđen. Enter nije pritisnut.'
+  throw 'Nakon lijepljenja fokus vise nije potvrdjen. Enter nije pritisnut.'
 }
 
 $Shell.SendKeys('{ENTER}')
@@ -360,4 +360,4 @@ Start-Sleep -Seconds 2
 
 Write-EvaLog 'Fresh-chat trigger submitted only after UI Automation positively identified and focused the ChatGPT composer; assistant response not independently verified.'
 Write-Host 'EVA_FRESH_CHAT_SUBMISSION_ATTEMPTED'
-Write-Host 'Polje za poruku potvrđeno; kratka aktivacijska poruka poslana.'
+Write-Host 'Polje za poruku potvrdjeno; kratka aktivacijska poruka poslana.'
