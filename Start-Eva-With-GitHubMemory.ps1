@@ -23,6 +23,13 @@ foreach ($File in $Files) {
     Remove-Item $Temp -Force -ErrorAction SilentlyContinue
     throw "Preuzimanje nije valjano: $($File.Name)"
   }
+
+  # Windows PowerShell 5.1 may parse UTF-8 scripts without a BOM as ANSI.
+  # Decode downloaded GitHub files explicitly as UTF-8 and save every .ps1 with a UTF-8 BOM.
+  $DownloadedText = [System.IO.File]::ReadAllText($Temp, [System.Text.Encoding]::UTF8)
+  $Utf8Bom = New-Object System.Text.UTF8Encoding($true)
+  [System.IO.File]::WriteAllText($Temp, $DownloadedText, $Utf8Bom)
+
   if (Test-Path $Destination) {
     $Backup = "$Destination.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
     Copy-Item $Destination $Backup -Force
