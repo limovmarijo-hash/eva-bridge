@@ -17,7 +17,6 @@ function Write-EvaLog([string]$Message) {
   Add-Content -LiteralPath $LogFile -Encoding UTF8 -Value "- $stamp | $Message"
 }
 
-# Prepare a compact trigger on every run, including Task Scheduler runs.
 & $Helper -Action Prepare -Root $Root
 if (-not (Test-Path $PromptFile)) { throw 'Aktivacijska poruka nije stvorena.' }
 $Prompt = [System.IO.File]::ReadAllText($PromptFile, [System.Text.Encoding]::UTF8).Trim()
@@ -33,54 +32,150 @@ if ($DryRun) {
   exit 0
 }
 
-# IMPORTANT: never read EVA-ChatGPT-URL.txt. It points to the exhausted legacy chat.
-# Opening the ChatGPT root creates a fresh chat rather than reusing the old /c/<id> URL.
+# We deliberately ignore EVA-ChatGPT-URL.txt: it points to the exhausted legacy chat.
 Set-Clipboard -Value $Prompt
-Write-EvaLog 'Fresh-chat activation started; legacy conversation URL deliberately ignored.'
 
-# Resolve Google Chrome explicitly; do not use the Windows default browser.
+# Use Win32 top-level window handles rather than Chrome process IDs.
+# Chrome can host multiple browser windows in the same process, so AppActivate(PID)
+# is not sufficient to identify the exact window just created.
+Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public static class EvaWin32 {
+    public class WindowInfo {
+        public IntPtr Handle;
+        public uint ProcessId;
+        public string Title;
+    }
+
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+    public static WindowInfo[] GetChromeWindows(uint[] chromeProcessIds) {
+        var allowed = new HashSet<uint>(chromeProcessIds);
+        var result = new List<WindowInfo>();
+
+        EnumWindows(delegate(IntPtr hWnd, IntPtr lParam) {
+            if (!IsWindowVisible(hWnd)) return true;
+
+            uint pid;
+            GetWindowThreadProcessId(hWnd, out pid);
+            if (!allowed.Contains(pid)) return true;
+
+            var sb = new StringBuilder(512);
+            GetWindowText(hWnd, sb, sb.Capacity);
+            result.Add(new WindowInfo {
+                Handle = hWnd,
+                ProcessId = pid,
+                Title = sb.ToString()
+            });
+            return true;
+        }, IntPtr.Zero);
+
+        return result.ToArray();
+    }
+}
+'@
+
+function Get-ChromeWindows {
+  $Pids = @(Get-Process -Name chrome -ErrorAction SilentlyContinue | ForEach-Object { [uint32]$_.Id })
+  if ($Pids.Count -eq 0) { return @() }
+  return @([EvaWin32]::GetChromeWindows($Pids))
+}
+
+$Before = @(Get-ChromeWindows)
+$BeforeHandles = @{}
+foreach ($Window in $Before) {
+  $BeforeHandles[$Window.Handle.ToInt64()] = $true
+}
+Write-EvaLog "Chrome windows before launch: $($Before.Count)"
+
 $ChromeCandidates = @(
   (Get-Command chrome.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -ErrorAction SilentlyContinue),
   "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
-  "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
   "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe"
 ) | Where-Object { $_ -and (Test-Path $_) }
 
 $ChromeExe = $ChromeCandidates | Select-Object -First 1
 if (-not $ChromeExe) {
   Write-EvaLog 'FAILED: Google Chrome executable was not found; no activation message sent.'
-  throw 'Google Chrome nije pronadjen. Instalacija ili putanja Chromea nije potvrdjena; poruka nije poslana.'
+  throw 'Google Chrome nije pronadjen. Poruka nije poslana.'
 }
 
 Start-Process -FilePath $ChromeExe -ArgumentList @('--new-window', $NewChatUrl)
 Write-EvaLog "Google Chrome launched explicitly: $ChromeExe"
 Write-Host 'Otvaram NOVI ChatGPT razgovor u Google Chromeu...'
-Start-Sleep -Seconds 20
 
+$TargetWindow = $null
+for ($i = 0; $i -lt 30 -and -not $TargetWindow; $i++) {
+  Start-Sleep -Seconds 1
+  $After = @(Get-ChromeWindows)
+  $NewWindows = @($After | Where-Object {
+    -not $BeforeHandles.ContainsKey($_.Handle.ToInt64())
+  })
+
+  $TargetWindow = $NewWindows |
+    Where-Object { $_.Title -match 'ChatGPT' } |
+    Select-Object -First 1
+
+  if (-not $TargetWindow -and $NewWindows.Count -gt 0 -and $i -ge 10) {
+    $TargetWindow = $NewWindows | Select-Object -First 1
+  }
+}
+
+if (-not $TargetWindow) {
+  Write-EvaLog 'FAILED: no newly created Chrome top-level window was identified; no send attempted.'
+  throw 'Novi Chrome prozor nije pouzdano identificiran. Poruka nije poslana.'
+}
+
+Write-EvaLog "Target Chrome window identified: handle=$($TargetWindow.Handle.ToInt64()), pid=$($TargetWindow.ProcessId), title='$($TargetWindow.Title)'"
+Write-Host "Pronađen NOVI ChatGPT prozor: $($TargetWindow.Title)"
+
+if ([EvaWin32]::IsIconic($TargetWindow.Handle)) {
+  [EvaWin32]::ShowWindowAsync($TargetWindow.Handle, 9) | Out-Null
+}
+[void][EvaWin32]::SetForegroundWindow($TargetWindow.Handle)
+Start-Sleep -Seconds 1
+
+$Foreground = [EvaWin32]::GetForegroundWindow()
+if ($Foreground -ne $TargetWindow.Handle) {
+  Write-EvaLog "FAILED: target window could not be brought to foreground; foreground=$($Foreground.ToInt64()), target=$($TargetWindow.Handle.ToInt64()). No send attempted."
+  throw 'Novi ChatGPT prozor nije mogao biti postavljen u prvi plan. Poruka nije poslana da se izbjegne slanje u pogrešan prozor.'
+}
+
+Write-EvaLog 'Target window is confirmed foreground; sending clipboard paste.'
 $Shell = New-Object -ComObject WScript.Shell
-$Activated = $false
-$Candidates = @(Get-Process -Name chrome -ErrorAction SilentlyContinue |
-  Where-Object { $_.MainWindowHandle -ne 0 } |
-  Sort-Object StartTime -Descending)
-
-foreach ($Process in $Candidates) {
-  try {
-    if ($Shell.AppActivate([int]$Process.Id)) {
-      $Activated = $true
-      break
-    }
-  } catch {}
-}
-if (-not $Activated) {
-  Write-EvaLog 'FAILED: browser window could not be activated; no send attempted.'
-  throw 'Nije pronadjen aktivan prozor Edge/Chrome. Poruka nije poslana.'
-}
-
-Start-Sleep -Seconds 2
 $Shell.SendKeys('^v')
 Start-Sleep -Milliseconds 700
 $Shell.SendKeys('{ENTER}')
 Start-Sleep -Seconds 2
-Write-EvaLog 'Fresh-chat message submission attempted via clipboard and Enter; assistant response not independently verified.'
+
+Write-EvaLog 'Fresh-chat message submitted to the newly identified foreground window; assistant response not independently verified.'
 Write-Host 'EVA_FRESH_CHAT_SUBMISSION_ATTEMPTED'
-Write-Host 'Provjeri da se poruka pojavila u NOVOM razgovoru i da je Eva odgovorila.'
+Write-Host 'Poruka je poslana u novootvoreni prozor koji je skripta sama identificirala.'
