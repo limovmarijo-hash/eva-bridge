@@ -5,12 +5,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Safety model:
-# - Only visible Chrome top-level windows whose title contains "ChatGPT" are candidates.
-# - The currently focused window must itself be a ChatGPT Chrome window.
-# - The focused window is always preserved.
-# - Without -Close, this script only previews the candidates.
-# - Other Chrome windows and non-Chrome applications are never touched.
+# Keeps the topmost visible Chrome window whose title contains ChatGPT.
+# Sends WM_CLOSE to every other visible Chrome browser window.
+# Without -Close, this is preview-only.
 
 if (-not ('EvaWindowCleanup' -as [type])) {
   Add-Type -TypeDefinition @'
@@ -36,9 +33,6 @@ public static class EvaWindowCleanup {
     public static extern bool IsWindowVisible(IntPtr hWnd);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -50,6 +44,7 @@ public static class EvaWindowCleanup {
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool PostMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
 
+    // EnumWindows returns top-level windows in Z order (topmost first).
     public static WindowInfo[] GetChromeWindows(uint[] processIds) {
         var allowed = new HashSet<uint>(processIds);
         var result = new List<WindowInfo>();
@@ -66,12 +61,14 @@ public static class EvaWindowCleanup {
             GetWindowText(hWnd, title, title.Capacity);
             GetClassName(hWnd, className, className.Capacity);
 
-            result.Add(new WindowInfo {
-                Handle = hWnd,
-                ProcessId = pid,
-                Title = title.ToString(),
-                ClassName = className.ToString()
-            });
+            if (className.ToString() == "Chrome_WidgetWin_1") {
+                result.Add(new WindowInfo {
+                    Handle = hWnd,
+                    ProcessId = pid,
+                    Title = title.ToString(),
+                    ClassName = className.ToString()
+                });
+            }
             return true;
         }, IntPtr.Zero);
 
@@ -92,25 +89,23 @@ if ($ChromePids.Count -eq 0) {
 }
 
 $Windows = @([EvaWindowCleanup]::GetChromeWindows($ChromePids))
-$Foreground = [EvaWindowCleanup]::GetForegroundWindow()
-$Active = $Windows |
-  Where-Object { $_.Handle -eq $Foreground -and $_.Title -match 'ChatGPT' } |
+
+# Preserve the topmost ChatGPT window. It is expected to be the EVA window
+# left in front by Start-Eva.ps1. If none exists, abort without closing anything.
+$EvaWindow = $Windows |
+  Where-Object { $_.Title -match 'ChatGPT' } |
   Select-Object -First 1
 
-if (-not $Active) {
-  throw 'Sigurnosni prekid: aktivni prozor nije prepoznat kao ChatGPT u Chromeu. Nijedan prozor nije zatvoren.'
+if (-not $EvaWindow) {
+  throw 'Sigurnosni prekid: nije pronađen nijedan Chrome prozor s naslovom ChatGPT. Nijedan prozor nije zatvoren.'
 }
 
-$Candidates = @(
-  $Windows | Where-Object {
-    $_.Handle -ne $Active.Handle -and
-    $_.ClassName -eq 'Chrome_WidgetWin_1' -and
-    $_.Title -match 'ChatGPT'
-  }
-)
+$Candidates = @($Windows | Where-Object {
+  $_.Handle -ne $EvaWindow.Handle
+})
 
-Write-Host "EVA_ACTIVE_WINDOW_PRESERVED handle=$($Active.Handle.ToInt64()) title='$($Active.Title)'"
-Write-Host "EVA_OLD_CHATGPT_WINDOWS_FOUND=$($Candidates.Count)"
+Write-Host "EVA_WINDOW_PRESERVED handle=$($EvaWindow.Handle.ToInt64()) pid=$($EvaWindow.ProcessId) title='$($EvaWindow.Title)'"
+Write-Host "OTHER_CHROME_WINDOWS_FOUND=$($Candidates.Count)"
 
 foreach ($Window in $Candidates) {
   Write-Host ("CANDIDATE handle={0} pid={1} title='{2}'" -f
@@ -119,16 +114,16 @@ foreach ($Window in $Candidates) {
 
 if (-not $Close) {
   Write-Host 'EVA_CLEANUP_PREVIEW_ONLY'
-  Write-Host 'Za stvarno zatvaranje pokreni: .\Close-Eva-OldChatGPTWindows.ps1 -Close'
+  Write-Host 'Pregledaj popis. Za zatvaranje pokreni: .\Close-Eva-OldChatGPTWindows.ps1 -Close'
   exit 0
 }
 
 $Closed = 0
 $Failed = 0
+
 foreach ($Window in $Candidates) {
-  if ($PSCmdlet.ShouldProcess(
-      ("Chrome ChatGPT window handle={0} title='{1}'" -f $Window.Handle.ToInt64(), $Window.Title),
-      'Send graceful WM_CLOSE')) {
+  $Description = "Chrome window handle=$($Window.Handle.ToInt64()) title='$($Window.Title)'"
+  if ($PSCmdlet.ShouldProcess($Description, 'Send graceful WM_CLOSE')) {
     $Sent = [EvaWindowCleanup]::PostMessage(
       $Window.Handle, [uint32]0x0010, [IntPtr]::Zero, [IntPtr]::Zero
     )
@@ -143,13 +138,9 @@ foreach ($Window in $Candidates) {
 
 Start-Sleep -Seconds 2
 $Remaining = @([EvaWindowCleanup]::GetChromeWindows($ChromePids) |
-  Where-Object {
-    $_.Handle -ne $Active.Handle -and
-    $_.ClassName -eq 'Chrome_WidgetWin_1' -and
-    $_.Title -match 'ChatGPT'
-  })
+  Where-Object { $_.Handle -ne $EvaWindow.Handle })
 
 Write-Host "EVA_CLOSE_MESSAGES_SENT=$Closed"
 Write-Host "EVA_CLOSE_MESSAGES_FAILED=$Failed"
-Write-Host "EVA_OLD_CHATGPT_WINDOWS_REMAINING=$($Remaining.Count)"
+Write-Host "OTHER_CHROME_WINDOWS_REMAINING=$($Remaining.Count)"
 Write-Host 'Napomena: WM_CLOSE je zahtjev za uredno zatvaranje; Chrome može tražiti potvrdu ako neki prozor ima nespremljen sadržaj.'
