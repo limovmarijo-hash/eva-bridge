@@ -23,3 +23,10 @@
 - Compare against no-signal, time-aligned controls, buy-and-hold, and random-entry baselines.
 - Clearly label missing data, failed downloads, unverified claims, and limitations.
 - A strategy is not validated until its edge survives out-of-sample testing and realistic execution costs.
+
+## Research run — 2026-11-27
+- Re-audited EVA TICK 1.2 before any new ranking. The previously identified boundary fix remains valid: test starts with `previous_price=None`, and the three local boundary tests passed in the 2026-11-26 audit.
+- Confirmed again that no historical market backtest was run in this cycle because the required public Binance Data Vision archive host was not reachable from the runtime; no data or results were fabricated.
+- The existing 1.2 implementation is not yet sufficient for the requested research standard: no train/validation/walk-forward selection, no locked holdout, no time-aligned/random-entry/buy-hold controls, no signed aggressive-flow features, no explicit spread model, and no forced time exit.
+- Current cost anchor: Binance's published Regular User Spot maker/taker rate is 0.100%/0.100%; our research floor remains 0.24% round-trip including the prior fee+slippage assumption, but that must not be described as a complete spread-inclusive model. citeturn435001search2
+- Decision: do not rank or promote the old uptick/fixed-TP results. The next implementation gate is a new event-driven research harness using actual loaded time ranges, quantity + buyer-maker fields, fixed time exits, explicit spread/slippage stress, time-matched controls, and expanding walk-forward selection. No profitability claim until that harness produces reproducible OOS results.
